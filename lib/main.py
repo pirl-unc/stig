@@ -64,7 +64,7 @@ parser.add_argument("--insert-length-sd-cutoff", type=int, default=4, metavar='N
 
 parser.add_argument("--degrade", default=None, metavar='B:L:k:mid',
 										help="Simulate non-optimatal quality.  Value is a colon-separated list to define a logistic function outlining the error rate per base position.  B - Base error rate probability.  L - Maximum error rate. k - Steepness factor. mid - Midpoint, this is the base position where error rate is equal to 1/2 of L")
-parser.add_argument("--display-degredation",  metavar='B:L:k:mid', default=None,
+parser.add_argument("--display-degradation",  metavar='B:L:k:mid', default=None,
 										help="Display the error rate per base pair for a given B:L:k:mid value and exit.  The number of positions displayed is adjustable through the --read-length-mean option.  This is mostly useful in adjusting these parameters to be passed to the --degrade option.  Note that no reads or repertoire will be generated when this option is given")
 
 parser.add_argument("--receptor-ratio", metavar="RATIO", type=float, default=0.9,
@@ -91,13 +91,13 @@ else:
 
 
 # Process the 'display-degedation' option
-if args.display_degredation is not None:
-		components = re.split(':', args.display_degredation)
+if args.display_degradation is not None:
+		components = re.split(':', args.display_degradation)
 		if( components == None or
 				not isinstance(components, list) or
 				len(components) != 4 or
 				components[0] <= 0 or components[1] <= 0 or components[2] <= 0 or components[3] <= 0):
-				log.error("Invalid string for degredation \"%s\".  Valid example: 0.005:0.2:0.25:15")
+				log.error("Invalid string for degradation \"%s\".  Valid example: 0.005:0.2:0.25:15")
 				exit(-1)
 		baseError, L, k, midpoint = components
 		for i in range(0, args.read_length_mean):
@@ -171,7 +171,7 @@ if args.degrade is not None:
 				not isinstance(components, list) or
 				len(components) != 4 or
 				components[0] <= 0 or components[1] <= 0 or components[2] <= 0 or components[3] <= 0):
-				log.error("Invalid string for degredation \"%s\".  Valid example: 0.005:0.2:0.25:15")
+				log.error("Invalid string for degradation \"%s\".  Valid example: 0.005:0.2:0.25:15")
 				exit(-1)
 		baseError, L, k, midpoint = components
 
