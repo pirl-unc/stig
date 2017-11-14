@@ -1,12 +1,28 @@
 
 
 TCR_OPTS=\
---output=outputs.fastq \
---repertoire-size=5000 \
---population-size=100000 \
+--output=test_output \
+--repertoire-size=10 \
+--population-size=100 \
 --read-type=single \
 --sequence-type=dna \
---sequences=500 ./data/*.fasta \
+--sequence-count=500 \
+--read-length-mean=80 \
+--read-length-sd=0 \
+data/*.fasta
+
+
+DEVEL_OPTS=\
+--output=test_output \
+--repertoire-size=1 \
+--population-size=10 \
+--read-type=paired \
+--sequence-type=rna \
+--sequence-count=5 \
+--read-length-mean=48 \
+--read-length-sd=0 \
+--degrade=0.01:0.2:0.15:45 \
+--log-level=debug \
 data/*.fasta
 
 
@@ -23,4 +39,4 @@ work:
 	./lib/main.py $(TCR_OPTS)
 
 devel:
-	./lib/main.py --log-level=debug $(TCR_OPTS)
+	./lib/main.py $(DEVEL_OPTS)

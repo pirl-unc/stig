@@ -4,6 +4,7 @@ import logging
 import random
 import math
 import numpy
+import time
 
 # TCR configuration class
 #
@@ -195,7 +196,7 @@ class tcrConfig:
 
 		def readAlleles( self, filenames ):
 
-				if( isinstance(filenames, str)):
+				if isinstance(filenames, str):
 						filenames = [filenames]
 
 				for file in filenames:
@@ -457,11 +458,12 @@ class tcrConfig:
 		# to ensure it is structurally correct (e.g. no errant stop codons, etc.)
     #
 		# Return value:
-    # An array of two 6-tuples, defining our DNA and RNA sequences:
-		# ( chromosome, 5' end coordinates (NCBI), 5' strand (forward/reverse), DNA/RNA sequence, 3' start coordinates (NCBI), 3' strand (forward/reverse) )
-    #
+    # 1. An array of two 6-tuples, defining our DNA and RNA sequences:
+		#   ( chromosome, 5' end coordinates (NCBI), 5' strand (forward/reverse), DNA/RNA sequence, 3' start coordinates (NCBI), 3' strand (forward/reverse) )
+    # OR
+		# 2. None: if this VDJ recombination failed (i.e. early stop codon or invalid CDR3 AA sequence)
 		
-		def recombinate( self, V, D, J, C ):
+		def recombinate( self, V, D, J, C):
 				self.log.info("Recombinate() called...")
 				self.log.debug("Args: %s", (V, D, J, C))
 
@@ -471,7 +473,7 @@ class tcrConfig:
 				vIndex, vAllele = V
 				jIndex, jAllele = J
 				cIndex, cAllele = C
-				
+
 				chromosome = None
 				if re.match('^7', self.receptorSegment[jIndex]['chromosome']):
 						chromosome = 7
@@ -531,16 +533,24 @@ class tcrConfig:
 				# Check for early stop codons
 				matches = re.match('^((?:[CTAG]{3})*)(TAA|TAG|TGA)((?:[CTAG]{3})+)$', rnaSequence)
 				if matches is not None:
-						self.log.info("Stop codon found in sequence, recursing...")
-						return self.recombinate(V, D, J, C)
+						self.log.info("Invalid CDR3: Stop codon found in sequence...")
+						return None
 				
-				cdr3Pattern = r'(TT[TC]|TA[CT])(TT[CT]|TA[TC]|CA[TC]|GT[AGCT]|TGG)(TG[TC])(([GA][AGCT])|TC)[AGCT]([ACGT]{3}){5,32}TGGG[GCT][GCT]'
+        # Enforce CxxxxxFGxG in AA space
+				cdr3Pattern = '^((?:[CTAG]{3})+)(TG[TC])((?:[CTAG]{3}){5,32})(TT[TC]GG[CTAG][CTAG]{3}GG[CTAG])'
+				# Check for the AA sequence following CxxxxxF
+				cdr3Consolation = '^((?:[CTAG]{3})+)(TG[TC])((?:[CTAG]{3}){5,32})(TT[TC](?:[CTAG]{3}){3})'
+
 				matches = re.match(cdr3Pattern, rnaSequence)
 				if matches is not None:
 						self.log.info("Valid CDR3")
+						self.log.debug(matches.groups())
 				else:
+						matches = re.match(cdr3Consolation, rnaSequence)
 						self.log.info("Invalid CDR3")
-						# TODO: Recurse here
+						if matches is not None:
+								self.log.debug(matches.groups())
+						return None
 						
 				# Calculate our DNA/RNA 5' and 3' UTR areas
 				dnaStartPosition = None
@@ -562,8 +572,8 @@ class tcrConfig:
 
 				DNA = (chromosome, dnaStartPosition, startStrand, dnaSequence, dnaEndPosition, endStrand)
 				RNA = (chromosome, rnaStartPosition, startStrand, rnaSequence, rnaEndPosition, endStrand)
-				self.log.info("recombinate() returning DNA: %s RNA %s", DNA, RNA)
-
+				self.log.debug("recombinate() returning DNA: %s \nRNA %s", DNA, RNA)
+				self.log.info("recominate() returning...")
 				return [ DNA, RNA ]
 				
 		def getRandomNucleotides(self, count):
@@ -699,6 +709,47 @@ class tcrConfig:
 						if rand < cumulativeProbability:
 								break
 				return index
+
+
+		# Degrade a sequence read, based on some logistic parameters
+    #
+		# Args:
+    # read - String.  The read to be degraded
+    # [ baseError, L, k, midpoint] are parameters for the logistic function defining our error rate:
+    # baseError - Base error rate probability
+		# L - Maximum error rate
+    # k - Steepness factor
+		# midpoint - Base position where the error rate is equal to 1/2 of L
+    # ident - Label for this entry in a FASTQ formatted file
+		#
+    # Returns:
+    # FASTQ string of the "degraded" read, with sequence label and quality score
+		#
+		def getDegradedFastq(self, read, baseError, L, k, midpoint, ident):
+				self.log.info("getDegradedFastq() called")
+				self.log.debug("Arguments: %s", (read, baseError, L, k, midpoint, ident))
+
+				phred33 = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHI"
+				readStr = ''
+				qualStr = ''
+				for i in range(0, len(read)):
+						errorRate = (L - baseError) / (1 + math.exp(-k*(i - midpoint))) + baseError
+						phredScore = int(-10 * math.log(errorRate))
+						if phredScore > 40:
+								phredScore = 40
+						if random.random() < errorRate:
+								readStr += self.getRandomNucleotides(1)
+						else:
+								readStr += read[i]
+						qualStr += phred33[phredScore]
+
+				fastqOutput = "%s\n%s\n+\n%s\n" % (ident, readStr, qualStr)
+				
+				self.log.debug("Read: %s", readStr)
+				self.log.debug("Qual: %s", qualStr)
+
+				return fastqOutput
+
 				
 class tcr:
 
@@ -754,20 +805,30 @@ class tcr:
 						self.type2 = 'D'
 				self.log.info("Chosen: %s %s", self.type1, self.type2)
 
-				self.V1 = self.config.chooseRandomSegment(self.type1, componentName='V')
-				if( self.type1 in ('B', 'D')):
-						self.D1 = self.config.chooseRandomSegment(self.type1, componentName='D', V=self.V1)
-				self.J1 = self.config.chooseRandomSegment(self.type1, componentName='J', V=self.V1, D=self.D1)
-				self.C1 = self.config.chooseRandomSegment(self.type1, componentName='C', V=self.V1, D=self.D1, J=self.J1)
-
-				self.V2 = self.config.chooseRandomSegment(self.type2, componentName='V')
-				if( self.type2 in ('B', 'D')):
-						self.D2 = self.config.chooseRandomSegment(self.type2, componentName='D', V=self.V2)
-				self.J2 = self.config.chooseRandomSegment(self.type2, componentName='J', V=self.V2, D=self.D2)
-				self.C2 = self.config.chooseRandomSegment(self.type2, componentName='C', V=self.V2, D=self.D2, J=self.J2)
-
-				self.DNA1, self.RNA1 = self.config.recombinate(self.V1, self.D1, self.J1, self.C1)
-				self.DNA2, self.RNA2 = self.config.recombinate(self.V2, self.D2, self.J2, self.C2)
+				while 1:
+						self.V1 = self.config.chooseRandomSegment(self.type1, componentName='V')
+						if self.type1 in ('B', 'D'):
+								self.D1 = self.config.chooseRandomSegment(self.type1, componentName='D', V=self.V1)
+						self.J1 = self.config.chooseRandomSegment(self.type1, componentName='J', V=self.V1, D=self.D1)
+						self.C1 = self.config.chooseRandomSegment(self.type1, componentName='C', V=self.V1, D=self.D1, J=self.J1)
+								
+						sequenceTuple = self.config.recombinate(self.V1, self.D1, self.J1, self.C1)
+						if sequenceTuple is not None:
+								self.DNA1, self.RNA1 = sequenceTuple
+								break
+				while 1:
+						self.V2 = self.config.chooseRandomSegment(self.type2, componentName='V')
+						if self.type2 in ('B', 'D'):
+								self.D2 = self.config.chooseRandomSegment(self.type2, componentName='D', V=self.V2)
+						self.J2 = self.config.chooseRandomSegment(self.type2, componentName='J', V=self.V2, D=self.D2)
+						self.C2 = self.config.chooseRandomSegment(self.type2, componentName='C', V=self.V2, D=self.D2, J=self.J2)
+										
+						sequenceTuple = self.config.recombinate(self.V2, self.D2, self.J2, self.C2)
+						if sequenceTuple is not None:
+								self.DNA2, self.RNA2 = sequenceTuple
+								self.log.info("randomize() complete")
+								break
+						
 				
 class tcrRepertoire:
 
@@ -843,7 +904,9 @@ class tcrRepertoire:
 				self.log.info("populate() complete...")
 
 				
-								
+		# Notes:
+		# For fixed-length reads or inner mate distances, set the standard deviation to zero and the mean to whatever you'd like
+		
 		def simulateRead( self, count, space, distribution='gaussian', read_length_mean=25, read_length_sd=4, read_length_sd_cutoff=4, paired_end=False, inner_mate_length_mean=100, inner_mate_length_sd=8, inner_mate_length_sd_cutoff=4):
 				self.log.debug("dnaRead() called...")
 
@@ -870,24 +933,29 @@ class tcrRepertoire:
 						readLength = None
 						if distribution == 'gaussian':
 								if paired_end is False:
-										randLength = 0
-										while abs(randLength - read_length_mean) / read_length_sd > read_length_sd_cutoff and randLength <= 0:
-												randLength = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
-										readLength = (randLength)
+										if read_length_sd > 0:
+												randLength = 0
+												while abs(randLength - read_length_mean) / read_length_sd > read_length_sd_cutoff and randLength <= 0:
+														randLength = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
+												readLength = (randLength)
+										else:
+												readLength = read_length_mean
 										
 								else: # Paired-end reads
-										self.log.critical("TODO")
-										raise ValueError("TODO")
-								
 										read1Length = 0
 										read2Length = 0
 										innerMateLength = 0
-										while abs(read1Length - read_length_mean) / read_length_sd > read_length_sd_cutoff and read1Length <= 0:
-												read1Length = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
-										while abs(read2Length - read_length_mean) / read_length_sd > read_length_sd_cutoff and read2Length <= 0:
-												read2Length = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
-										while abs(innerMateLength - inner_mate_length_mean) / inner_mate_length_sd > inner_mate_length_sd_cutoff and innerMateLength <= 0:
-												innerMateLength = int(round(numpy.random.normal(inner_mate_length_mean, inner_mate_length_sd)))
+										if read_length_sd > 0:
+												while abs(read1Length - read_length_mean) / read_length_sd > read_length_sd_cutoff and read1Length <= 0:
+														read1Length = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
+												while abs(read2Length - read_length_mean) / read_length_sd > read_length_sd_cutoff and read2Length <= 0:
+														read2Length = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
+												while abs(innerMateLength - inner_mate_length_mean) / inner_mate_length_sd > inner_mate_length_sd_cutoff and innerMateLength <= 0:
+														innerMateLength = int(round(numpy.random.normal(inner_mate_length_mean, inner_mate_length_sd)))
+										else:
+												read1Length = read_length_mean
+												read2Length = read_length_mean
+												innerMateLength = inner_mate_length_mean
 										readLength = (read1Length, innerMateLength, read2Length)
 														
 						else:
@@ -907,17 +975,15 @@ class tcrRepertoire:
 						if random.random() < 0.5:
 								if space == 'dna':
 										receptorCoordinates = self.repertoire[readIndividual].DNA1
-								else:
+								elif space == 'rna':
 										receptorCoordinates = self.repertoire[readIndividual].RNA1
 						else:
 								if space == 'dna':
 										receptorCoordinates = self.repertoire[readIndividual].DNA2
-								else:
+								elif space == 'rna':
 										receptorCoordinates = self.repertoire[readIndividual].RNA2
 
-						#self.log.debug("Reading from: %s %d ", receptorCoordinates, readIndividual)
 						chromosome, sequenceStart, strandStart, sequence, sequenceEnd, strandEnd = receptorCoordinates
-
 						
 						self.log.debug("Choosing between [-100, %d]", len(sequence))
 						
@@ -945,7 +1011,7 @@ class tcrRepertoire:
 						elif _5UTRBases > 0 and _5UTRBases >= totalReadLength:
 								outputSequence # Do nothing
 						elif _5UTRBases == 0 and _3UTRBases == 0:
-								outputSequence += sequence[randomStart:randomStart+readLength]
+								outputSequence += sequence[randomStart:randomStart+totalReadLength]
 						elif _3UTRBases > 0:
 								outputSequence += sequence[len(sequence) - totalReadLength + _3UTRBases:]
 						else:
@@ -954,9 +1020,10 @@ class tcrRepertoire:
 								
 						if _3UTRBases > 0:
 								outputSequence += self.config.readChromosome(chromosome, sequenceEnd, sequenceEnd + _3UTRBases - 1, strandEnd)
+
+						if paired_end is False:
+								outputReads.append(outputSequence)
+						else:
+								outputReads.append([outputSequence[0:readLength[0]], outputSequence[readLength[0] + readLength[1]:]])
 								
-						self.log.debug("Output seq len: %d", len(outputSequence))
-								
-						outputReads.append(outputSequence)														
-						
 				return outputReads
