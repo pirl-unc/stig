@@ -35,7 +35,7 @@ random.seed()
 
 
 parser = argparse.ArgumentParser(description="Generate synthetic TCR read data")
-parser.add_argument('input', metavar='INPUT', nargs='+',
+parser.add_argument('input', metavar='INPUT', nargs='*',
 										help="Read TCR data from one or more IMGT-formatted fasta files")
 parser.add_argument("--output", default='tcr_synth',
 										help="Name of output fastq file.  This should be a basename, e.g. '--output=foo' will write to 'foo.fastq'.  Default is 'tcr_synth'")
@@ -104,6 +104,9 @@ if args.display_degradation is not None:
 				errorRate = (float(L) - float(baseError)) / (1 + math.exp(-float(k)*(i - int(midpoint)))) + float(baseError)
 				print("Position %-2d, error rate: %0.4f" % (i, errorRate))
 		exit(0)
+elif args.input is None:
+		print("Error: Must give either input FASTA files, or --display-degradation option")
+		exit(-1)
 
 
 		
