@@ -214,10 +214,10 @@ class tcrConfig:
 												x,allele,x,functionality,region,x,x,x,x,x,x,x,x,x,x,x = line.split("|",)
 												matches = re.match('^(TR[ABGD](?:[VDJ]\d+(?:-\d+)?|(?:C\d*)))\*(\d+)$', allele)
 												if( matches is None ):
-														self.log.warning("Skipping unsupported allele name %s", allele)		
+														self.log.warning("Skipping unsupported gene allele name %s", allele)		
 														continue
 
-												if( re.match('^(V-REGION|J-REGION|EX\d|D-REGION)$', region) ):
+												if re.match('^(V-REGION|J-REGION|EX\d|D-REGION)$', region):
 														gene, allele_name = matches.groups()
 														
 														segments = filter(lambda e:e['gene'] == gene and e['region'] == region,
@@ -233,6 +233,26 @@ class tcrConfig:
 																self.log.warning("No corresponding receptor localization data for %s of %s*%s", region, gene, allele_name)
 														else:
 																self.log.critical("Multiple receptor localization data for %s of %s*%s", region, gene, allele_name)
+												elif re.match('^L-PART1\+L-PART2$', region):
+														self.log.debug("Loading L-PART1+L-PART2")
+														gene, allele_name = matches.groups()
+
+														# Find corresponding L-V-GENE-UNIT
+														segments = filter(lambda e:e['gene'] == gene and e['region'] == 'L-V-GENE-UNIT',
+																							self.receptorSegment)
+														if len(segments) is 1:
+																vRegionIndex = self.receptorSegment.index(segments[0])
+																foo = line.split("|")
+																if matches is None:
+																		self.log.error("ARGH")
+																else:
+																		sequenceLen = foo[6]
+																		outputLine = [self.receptorSegment[vRegionIndex].
+																		self.log.debug("Here: %s", matches.groups())
+														
+																self.log.debug("Here: %s", foo[6])
+																exit(-10)
+																														
 												else:
 														self.log.warning("Skipping unsupported gene region \"%s\" in allele %s", region, allele)
 														continue
@@ -264,6 +284,10 @@ class tcrConfig:
 				self.log.debug("readAlleles(): Processing complete")
 
 
+
+
+
+				
 		def setChromosomeFiles(self, chr7=None, chr14=None):
 
 				if not chr7 is None:
@@ -283,7 +307,9 @@ class tcrConfig:
 								self.log.debug("Chr14: Offset %d, line length %d", self.chr14Offset, self.chr14LineLength)
 								if( self.chr14Offset > 10 ):
 										self.log.warning("Chromosome file %s does not appear to be in proper format, reading may fail", chr14)
-								
+
+
+										
 				
 		def readChromosome(self, chromosome, start, end, strand):
 				self.log.info("readChromosome() starting")
