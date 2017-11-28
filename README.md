@@ -17,7 +17,7 @@ LATEST VERSION
 DOCUMENTATION
 -------------
 
-Documentation for the most recent version is available on the project website.  The manual is included in each version as [text in Markdown format] (docs/manual.md).
+Documentation for the most recent version is available on the project website.  The manual is included in each version as [text in Markdown format] (doc/manual.md).
 
 
 LICENSE
