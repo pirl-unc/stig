@@ -127,7 +127,7 @@ class tcrConfig:
 						if( len(line.split("\t")) == 15 ):
 								component, chromosome, strand, x, x, x, x, x, region, x, x, x, x, coordinates, x = line.split("\t")
 						else:
-								raise ValueError("Unexpected line #%din file %s", line_number, filename)
+								raise ValueError("Unexpected line #%din file %s" % (line_number, filename))
 						
 
 						# Validate the TCR component field (e.g. TRAV13-1)
@@ -368,18 +368,21 @@ class tcrConfig:
 								re.match('^[VDJ]-REGION|EX1', self.receptorSegment[i]['region']) ):
 
 								if componentName == 'V':
-										self.log.debug("Valid segment choice %s", self.receptorSegment[i]['gene'])
+										self.log.debug("Valid segment choice %s (%d)", self.receptorSegment[i]['gene'], i)
 										segmentChoices.append(i)
 										
 								if( componentName == 'J' and
 										self.receptorSegment[i]['chromosome'] == self.receptorSegment[Vindex]['chromosome'] ):
-										if not D is None and self.receptorSegment[i]['start_position'] < self.receptorSegment[Dindex]['start_position']:
-												next
-										self.log.debug("Valid segment choice %s", self.receptorSegment[i]['gene'])
+										if not D is None:
+												if( self.receptorSegment[i]['start_position'] < self.receptorSegment[Dindex]['start_position'] and
+														self.receptorSegment[i]['strand'] == 'forward' ):
+														self.log.debug("This is not a valid choice: %s (%d)", self.receptorSegment[i]['gene'], i)
+														continue
+										self.log.debug("Valid segment choice %s (%d)", self.receptorSegment[i]['gene'], i)
 										segmentChoices.append(i)
 
 								if( componentName == 'D' ):
-										self.log.debug("Valid segment choice %s", self.receptorSegment[i]['gene'])
+										self.log.debug("Valid segment choice %s (%d)", self.receptorSegment[i]['gene'], i)
 										segmentChoices.append(i)
 
 								if( componentName == 'C' and
@@ -388,9 +391,24 @@ class tcrConfig:
 											 self.receptorSegment[i]['strand'] == 'forward' ) or
 											(self.receptorSegment[i]['start_position'] < self.receptorSegment[Jindex]['start_position'] and
 											 self.receptorSegment[i]['strand'] == 'reverse' ) ) ):
-										self.log.debug("Valid segment choice %s", self.receptorSegment[i]['gene'])
-										segmentChoices.append(i)
+										self.log.debug("Valid segment choice %s (%d)", self.receptorSegment[i]['gene'], i)
+										if len(segmentChoices) > 0:
+												a = self.receptorSegment[i]
+												b = self.receptorSegment[segmentChoices[0]]
+												if( ( a['strand'] == 'forward' and a['start_position'] < b['start_position']) or
+														( a['strand'] == 'reverse' and a['start_position'] > b['start_position']) ):
+														segmentChoices = [ i ]
+												self.log.debug("C segment choices are now: %s", segmentChoices)
+										else:
+												segmentChoices.append(i)
+												
+				# Throw an error here if there are no possible join candidates.
+				# This should never happen
+				if len(segmentChoices) == 0:
+						self.log.critical("No possible segments to join")
+						exit(-10)
 
+										
 				segmentProbabilities = []						
 		    # Pull out our predefined probabilities, moving them from segmentChoices to segmentProbabilities as we find them
 				for i in self.VDJprobability:
@@ -408,6 +426,8 @@ class tcrConfig:
 										self.receptorSegment[j]['gene'] in i and
 										self.receptorSegment[Vindex]['gene'] in i ):
 										segmentProbabilities.append((j, i[len(i)-1]))
+										segmentChoices.remove(j)
+										break
 
 								if( componentName == 'J' and
 										( len(i) == 3 and
@@ -418,12 +438,10 @@ class tcrConfig:
 											self.receptorSegment[Vindex]['gene'] in i and
 											self.receptorSegment[Dindex]['gene'] in i ) ):
 										segmentProbabilities.append((j, i[len(i)-1]))
+										segmentChoices.remove(j)
+										break
 
-				
-				if len(segmentChoices) == 0:
-						self.log.critical("No possible segments to join")
-						exit(-10)
-						
+
 				# Fill in the undefined probabilities
 				probabilityTotal = 0
 				for i in segmentProbabilities:
@@ -436,6 +454,7 @@ class tcrConfig:
 				# Randomly choose a segment
 				rand = random.random()
 				self.log.debug("Roll: %0.3f", rand)
+
 				cumulativeProbability = 0
 				for i in segmentProbabilities:
 						segmentIndex, probability = i
@@ -446,7 +465,6 @@ class tcrConfig:
 								random.shuffle(alleles)
 								allele = alleles[0]
 								self.log.info("Choosing %d(%s) allele %s", segmentIndex, self.receptorSegment[segmentIndex]['gene'], allele)
-								
 								return (segmentIndex, allele)
 
 				raise ValueError("We fell through the rabbit hole")
@@ -535,23 +553,12 @@ class tcrConfig:
 				if matches is not None:
 						self.log.info("Invalid CDR3: Stop codon found in sequence...")
 						return None
-				
-        # Enforce CxxxxxFGxG in AA space
-				cdr3Pattern = '^((?:[CTAG]{3})+)(TG[TC])((?:[CTAG]{3}){5,32})(TT[TC]GG[CTAG][CTAG]{3}GG[CTAG])'
-				# Check for the AA sequence following CxxxxxF
-				cdr3Consolation = '^((?:[CTAG]{3})+)(TG[TC])((?:[CTAG]{3}){5,32})(TT[TC](?:[CTAG]{3}){3})'
 
-				matches = re.match(cdr3Pattern, rnaSequence)
-				if matches is not None:
-						self.log.info("Valid CDR3")
-						self.log.debug(matches.groups())
-				else:
-						matches = re.match(cdr3Consolation, rnaSequence)
-						self.log.info("Invalid CDR3")
-						if matches is not None:
-								self.log.debug(matches.groups())
+				# Continue only if our CDR3 sequence is valid
+				if not self.validateCDR3Sequence(rnaSequence):
+						self.log.info("Invalid CDR3 sequence")
 						return None
-						
+										
 				# Calculate our DNA/RNA 5' and 3' UTR areas
 				dnaStartPosition = None
 				if self.receptorSegment[vIndex]['strand'] == 'forward':
@@ -573,14 +580,80 @@ class tcrConfig:
 				DNA = (chromosome, dnaStartPosition, startStrand, dnaSequence, dnaEndPosition, endStrand)
 				RNA = (chromosome, rnaStartPosition, startStrand, rnaSequence, rnaEndPosition, endStrand)
 				self.log.debug("recombinate() returning DNA: %s \nRNA %s", DNA, RNA)
-				self.log.info("recominate() returning...")
+				self.log.info("recombinate() returning...")
 				return [ DNA, RNA ]
+
+		
+
+		# validateCDR3Sequence - Determine if an RNA sequence represents a valid CDR3
+    # 
+    # Args:
+    # rnaSeq - RNA sequence to examine
+    # 
+    # Returns:
+    # Boolean - True if there is a valid CDR3 sequence, in frame, in rnaSeq
+    #           False, if otherwise
+    # 
+		
+		def validateCDR3Sequence(self, rnaSeq):
 				
+        # Enforce CxxxxxFGxG in AA space
+				cdr3Pattern = '^((?:[CTAG]{3})+)(TG[TC])((?:[CTAG]{3}){5,32})(TT[TC]GG[CTAG][CTAG]{3}GG[CTAG])'
+				## Check for the AA sequence following CxxxxxF
+				#cdr3Consolation = '^((?:[CTAG]{3})+)(TG[TC])((?:[CTAG]{3}){5,32})(TT[TC](?:[CTAG]{3}){3})'
+
+				matches = re.match(cdr3Pattern, rnaSeq)
+				if matches is not None:
+						self.log.info("Valid CDR3")
+						self.log.debug(matches.groups())
+				else:
+						#matches = re.match(cdr3Consolation, rnaSequence)
+						self.log.info("Invalid CDR3")
+						#if matches is not None:
+						#		self.log.debug(matches.groups())
+						return False
+
+				return True
+
+		# getCDR3Sequence - Obtain the CDR3 RNA sequence from an RNA sequence
+    # 
+    # Args:
+    # rnaSeq - RNA sequence to examine
+    # 
+    # Returns:
+    # String, or None - String containing the nucletides of the CDR3 sequence,
+		#                   if a valid CDR3 sequence was found.
+		#                   None, if otherwise
+    # 
+		def getCDR3Sequence(self, rnaSeq):
+
+        # Enforce CxxxxxFGxG in AA space
+				cdr3Pattern = '^((?:[CTAG]{3})+)(TG[TC])((?:[CTAG]{3}){5,32})(TT[TC]GG[CTAG][CTAG]{3}GG[CTAG])'
+
+				matches = re.match(cdr3Pattern, rnaSeq)
+				if matches is not None:
+						return(''.join(matches.groups()[1:4]))
+				return None
+				
+
+		# getRandomNucleotides - Generate random nucleotide strings
+    # 
+    # Args:
+    # count - Number of random bases
+    # 
+    # Returns:
+    # String - String of count random C, T, A, or G characters
+    # 
+    # 
+    # 
+
 		def getRandomNucleotides(self, count):
 				if count < 0:
 						raise ValueError("Count must be a non-negative integer (zero is permissible)")
 				return ''.join(random.choice('CATG') for i in range(count))
-				
+
+
+		
 		# getSegmentSequences - Return the DNA & RNA of a gene segment
 		#
 		# N.b. The segment argument will likely be a 2-tuple pointing to a CDR3
@@ -714,41 +787,113 @@ class tcrConfig:
 		# Degrade a sequence read, based on some logistic parameters
     #
 		# Args:
-    # read - String.  The read to be degraded
-    # [ baseError, L, k, midpoint] are parameters for the logistic function defining our error rate:
+    # read   - String.  The read to be degraded
+		# method - String.  The method for degradation to be performed. Valid values: "logistic" or "phred"
+    # ident  - String. Label for this entry in a FASTQ formatted file
+		# variability   - Float.  Optional.  This adds additional per-nucleotide error
+    #          to the methods described below.  This is a percentage
+		#          relative error e.g. For some base, if the method determines the
+    #          error to be 0.05 or 5% and fuzz was given as 0.5 or 50%, then 
+		#          the actual error is 0.05 +/- 0.025, or range [2.5%, 7.5%]
+    #          Default is zero.
+		# display - Boolean.  If True, then will print details of degradation to
+    #           stdout.  Default is False.
+    # [ phred ] are parameters for using a Phred score to determine the per-nucleotide error rate
+		# phred - Error rate probability per nucleotide.  This is Phred+33 format
+    #         (i.e. [!, I] as acceptable characters)
+    #         If the read being degraded is longer than the given Phred string,
+		#         then the last base of the phred string is used for subsequent bases
+    #         (e.g. "IIIIJJ55" is equivalent to "IIIIJJ5555555555555")
+    # [ baseError, L, k, midpoint] are parameters for a logistic function defining the error rate:
     # baseError - Base error rate probability
 		# L - Maximum error rate
     # k - Steepness factor
 		# midpoint - Base position where the error rate is equal to 1/2 of L
-    # ident - Label for this entry in a FASTQ formatted file
 		#
     # Returns:
     # FASTQ string of the "degraded" read, with sequence label and quality score
 		#
-		def getDegradedFastq(self, read, baseError, L, k, midpoint, ident):
+		def getDegradedFastq(self, read, method, ident, variability=0, phred='', baseError=0, L=0, k=0, midpoint=0, display=False):
 				self.log.info("getDegradedFastq() called")
-				self.log.debug("Arguments: %s", (read, baseError, L, k, midpoint, ident))
+				self.log.debug("Arguments: %s", (read, method, ident, variability, phred, baseError, L, k, midpoint))
 
-				phred33 = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHI"
-				readStr = ''
-				qualStr = ''
-				for i in range(0, len(read)):
-						errorRate = (L - baseError) / (1 + math.exp(-k*(i - midpoint))) + baseError
-						phredScore = int(-10 * math.log(errorRate))
-						if phredScore > 40:
-								phredScore = 40
-						if random.random() < errorRate:
-								readStr += self.getRandomNucleotides(1)
-						else:
-								readStr += read[i]
-						qualStr += phred33[phredScore]
-
-				fastqOutput = "%s\n%s\n+\n%s\n" % (ident, readStr, qualStr)
+				if display == True:
+						print("Displaying degradation output with method %s, variability %0.5f" % (method, variability))
 				
-				self.log.debug("Read: %s", readStr)
-				self.log.debug("Qual: %s", qualStr)
+				phred33Reference = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHI"
+        #                   0 1234567890123456789012345678901234567890
+				if method not in ('phred', 'logistic'):
+						raise ValueError("Method %s must be either logistic or phred" % method)
+						exit(-10)
 
-				return fastqOutput
+				if method == 'logistic':
+						readStr = ''
+						qualStr = ''
+						for i in range(0, len(read)):
+								errorRate = (L - baseError) / (1 + math.exp(-k*(i - midpoint))) + baseError
+
+								if variability != 0:
+										errorRate += random.random() * 2 * errorRate * variability - errorRate * variability
+
+								phredScore = int(-10 * math.log(errorRate))
+								if phredScore > 40:
+										phredScore = 40
+										if random.random() < errorRate:
+												readStr += self.getRandomNucleotides(1)
+										else:
+												readStr += read[i]
+										qualStr += phred33Reference[phredScore]
+										if display == True:
+												print("Position %02d: error rate %0.4f, Phred+33 %s" % (i, errorRate, phred33Reference[phredScore]))
+
+						fastqOutput = "%s\n%s\n+\n%s\n" % (ident, readStr, qualStr)
+				
+						self.log.debug("Orig: %s", read)
+						self.log.debug("Read: %s", readStr)
+						self.log.debug("Qual: %s", qualStr)
+
+						return fastqOutput
+
+				elif method == 'phred':
+						readStr = ''
+						qualStr = ''
+						for i in range(0, len(read)):
+								errorRate = 0
+								if i >= len(phred):
+										errorRate = 10 ** ( phred33Reference.index(phred[-1]) / float(-10) )
+								else:
+										errorRate = 10 ** ( phred33Reference.index(phred[i]) / float(-10) )
+								if errorRate > 1:
+										errorRate = 1
+								elif errorRate < 0:
+										errorRate = 0
+								
+								if variability != 0:
+										errorRate += random.random() * 2 * errorRate * variability - errorRate * variability
+								
+								if random.random() < errorRate:
+										readStr += self.getRandomNucleotides(1)
+								else:
+										readStr += read[i]
+										
+								phredScore = int(-10 * math.log10(errorRate))
+								if phredScore > 40:
+										phredScore = 40
+										
+								qualStr += phred33Reference[phredScore]
+
+								if display is True:
+										print("Position %02d: error rate %0.4f, Phred+33 %s" % (i, errorRate, phred33Reference[phredScore]))
+
+								
+						fastqOutput = "%s\n%s\n+\n%s\n" % (ident, readStr, qualStr)
+						return fastqOutput
+				else:
+						raise ValueError("Invalid method \"%s\". We should not be here" % method)
+
+
+
+
 
 				
 class tcr:
@@ -828,8 +973,19 @@ class tcr:
 								self.DNA2, self.RNA2 = sequenceTuple
 								self.log.info("randomize() complete")
 								break
+
+		# getCDR3Sequences - Return RNA sequences of the CDR3 regions
+    # 
+    # Args: None
+    # 
+    # Returns:
+    # Array to CDR3 nucleotide strings for the two components of this T cell
+    # 
+    # 
+		def getCDR3Sequences( self ):
+				return [ self.config.getCDR3Sequence(self.RNA1[3]), self.config.getCDR3Sequence(self.RNA2[3]) ]
+
 						
-				
 class tcrRepertoire:
 
 		def __init__( self, config, size, log=None, AB_frequency = 0.9 ):
@@ -854,15 +1010,15 @@ class tcrRepertoire:
 						self.repertoire[i].randomize()
 				self.population = [0] * size
 				self.population_size = 0
-				self.distribution_options = ('flat', 'equal', 'gaussian', 'beta')
+				self.distribution_options = ('flat', 'equal', 'gaussian', 'chisquare')
 				self.distribution = None
 
 				return
 
 		
-		def populate( self, population_size, distribution, sd_cutoff=3 ):
+		def populate( self, population_size, distribution, g_cutoff=3, cs_k=2, cs_cutoff=8 ):
 				self.log.info("populate() called...")
-				self.log.debug("Args: %d individuals", population_size)
+				self.log.debug("Args: %s", (population_size, distribution, g_cutoff, cs_k, cs_cutoff))
 				
 				if(distribution not in self.distribution_options):
 						raise ValueError("distribution must be one of ", self.distribution_options)
@@ -874,34 +1030,52 @@ class tcrRepertoire:
 				else:
 						raise ValueError("population size must be a positive integer")
 						
-				if( self.distribution is 'flat' ):
+				if self.distribution is 'flat':
 						for i in range(0, self.population_size):
 								random_bin = int(math.floor(random.random() * len(self.repertoire)))
 								self.population[random_bin] += 1
 
-				if( self.distribution is 'equal' ):
+				elif self.distribution is 'equal':
 						for i in range(0, self.population_size):
 								random_bin = int(i % len(self.repertoire))
 								self.population[random_bin] += 1
 						
-				if( self.distribution is 'gaussian' ):
-						if( sd_cutoff < 0 ):
+				elif self.distribution is 'gaussian':
+						if( g_cutoff < 0 ):
 								raise ValueError("Argument sd_cutoff for populate must be a positive integer")
 
 						population_generated = 0						
 						while( population_generated < self.population_size ):
 								self.log.info("Rolling %d individuals", self.population_size - population_generated)
-								s = numpy.random.normal(0, 1, self.population_size - population_generated)
 								
-								for f in s:
-										if( abs(f) > sd_cutoff ):
+								for f in numpy.random.normal(0, 1, self.population_size - population_generated):
+										if( abs(f) > g_cutoff ):
 												continue
 										# Scale the normal values to match our repertoire "buckets"
-										f = f + sd_cutoff
-										bucket_size = sd_cutoff * 2.0 / len(self.repertoire)
+										f = f + g_cutoff
+										bucket_size = g_cutoff * 2.0 / len(self.repertoire)
 										self.population[int(f / bucket_size)] += 1
 										population_generated += 1
+
+				elif self.distribution is 'chisquare':
+						if( cs_k <= 0 or cs_cutoff <= 0 ):
+								raise ValueError("Invalid arguments for chi-square distribution.  Must be k > 0 and cutoff >0.  Got %f, %f" % (cs_k, cs_cutoff))
+						population_generated = 0
+						while population_generated < self.population_size:
+								self.log.info("Rolling %d individuals", self.population_size - population_generated)
+								for x in numpy.random.chisquare(cs_k, self.population_size):
+										if( x >= cs_cutoff):
+												continue
+										# Scale the values to match our repertoire "buckets"
+										self.population[int((x/cs_cutoff) * len(self.repertoire))] += 1
+										population_generated += 1
+
+				else:
+						raise ValueError("Invalid distribution %s" % self.distribution)
+				
 				self.log.info("populate() complete...")
+
+
 
 				
 		# Notes:
@@ -1027,3 +1201,25 @@ class tcrRepertoire:
 								outputReads.append([outputSequence[0:readLength[0]], outputSequence[readLength[0] + readLength[1]:]])
 								
 				return outputReads
+
+		# Return statistics about this repertoire, suitable for saving to a file
+    #
+    # Args: none
+    #
+    # Returns:
+    # Array with one element for each repertoire clone, formatted as so:
+    # [ Clone count, CDR3 sequence 1, CDR3 sequence 2 ]
+    #
+    #
+		
+		def getStatistics(self):
+				retval = []
+				for i in range(0, len(self.repertoire)):
+						CDR3_1, CDR3_2 = self.repertoire[i].getCDR3Sequences()
+						stats = [ self.population[i],
+											CDR3_1, self.repertoire[i].RNA1[3], self.repertoire[i].DNA1[3],
+											CDR3_2, self.repertoire[i].RNA2[3], self.repertoire[i].DNA2[3] ]
+											
+						retval.append(stats)
+				
+				return retval
