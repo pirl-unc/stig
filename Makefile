@@ -14,17 +14,21 @@ data/*.fasta
 
 DEVEL_OPTS=\
 --output=test_output \
---repertoire-size=1 \
---population-size=10 \
+--repertoire-size=10 \
+--population-size=100 \
 --read-type=paired \
 --sequence-type=rna \
 --sequence-count=5 \
 --read-length-mean=48 \
 --read-length-sd=0 \
---degrade=0.01:0.2:0.15:45 \
+--degrade-phred='555555555555776869382849@@@AAABBCCC' \
+--degrade-variability=0.25 \
 --log-level=debug \
 data/*.fasta
 
+TEST_OPTS=\
+--log-level=warning \
+data/*.fasta
 
 TR_BIN=/usr/bin/tr
 GREP_BIN=/bin/grep
@@ -40,3 +44,17 @@ work:
 
 devel:
 	./lib/main.py $(DEVEL_OPTS)
+
+
+
+# Test targets
+test: test_help test_display_degradation test_chisquare
+
+test_help:
+	./lib/main.py --help
+
+test_display_degradation:
+	./lib/main.py --degrade-phred='555555555555' --degrade-variability=0.5 --display-degradation
+
+test_chisquare:
+	./lib/main.py --population-distribution=chisquare $(TEST_OPTS)
