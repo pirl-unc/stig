@@ -1,13 +1,7 @@
+TCR Synthetic Data Generator
+============================
+
 TODO: Better title for this program
-===================================
-
-
-* INTRODUCTION
-* Latest version
-* Documentation / manual
-* License
-* Contact
-
 
 
 INTRODUCTION
@@ -23,7 +17,7 @@ LATEST VERSION
 DOCUMENTATION
 -------------
 
-Documentation is available on the website.  The manual for this version is also available in HTML and [Markdown] (docs/manual.md) formats.
+Documentation for the most recent version is available on the project website.  The manual is included in each version as [text in Markdown format]. (docs/manual.md)
 
 
 LICENSE
