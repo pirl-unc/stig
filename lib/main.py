@@ -37,10 +37,19 @@ random.seed()
 parser = argparse.ArgumentParser(description = "Generate synthetic TCR read data",
 																 epilog = "Please see manual or README for further details" )
 
-parser.add_argument('input', metavar='INPUT', nargs='*',
-										help='Read TCR data from one or more IMGT-formatted fasta files')
-parser.add_argument("--output", default='tcr_synth',
-										help='Name of output fastq file.  This should be a basename, e.g. \'--output=foo\' will write to \'foo.fastq\'.  Default is \'tcr_synth\'')
+parser.add_argument('allele_files', metavar='ALLELE_FILES', nargs='*',
+										help='Read TCR allele data from one or more IMGT-formatted fasta files')
+
+parser.add_argument('--chr7-filename', metavar='FILE',
+										help = "Filename of a FASTA formatted file with chromosome 7 reference data")
+parser.add_argument('--chr14-filename', metavar='FILE',
+										help = "Filename of a FASTA formatted file with chromosome 7 reference data")
+
+parser.add_argument('--tcell-data', metavar='FILE',
+										help = "Filename of a tab-separated file with T cell receptor segments and reference gene coordinates")
+
+parser.add_argument("--output", metavar='BASENAME', default='tcr_synth',
+										help='Name of output fastq file.  This should be a basename, e.g. \'--output=foo\' will write to \'foo.fastq\', \'foo.statistics.csv\', etc.  Default is \'tcr_synth\'')
 parser.add_argument('--repertoire-size', metavar='N', type=int, default=10,
 										help='Size of the TCR repertoire (i.e. the number of unique TCRs that are generated).  Default is 10')
 parser.add_argument('--population-size', metavar='N', type=int, default=100,
@@ -157,11 +166,20 @@ elif args.display_degradation is True:
 		raise ValueError("--display-degradation requires a degradation method.  See --degrade-logistic, --degrade-phred under help")
 
 
+#  Make sure we have the necessary options given to Generate synthetic reads
+if( args.chr7_filename  is None or
+		args.chr14_filename is None or
+		args.tcell_data     is None or
+		args.allele_files   is None ):
+		log.critical("Required command-line options missing (chr7-filename, chr14-filename, tcell-data or allele files).  See --help")
+		exit(-10)
+
+		
 # Create our configuration and repertoire objects, per the command-line options given
 my_configuration = tcrFOOBAR.tcrConfig(log=log.getChild('tcrConfig'))
-my_configuration.readTCRConfig('./data/tcell_receptor.tsv')
-my_configuration.readAlleles( args.input )
-my_configuration.setChromosomeFiles(chr7='./data/chr7.fa', chr14='./data/chr14.fa')
+my_configuration.readTCRConfig(args.tcell_data)
+my_configuration.readAlleles( args.allele_files )
+my_configuration.setChromosomeFiles(chr7=args.chr7_filename, chr14=args.chr14_filename)
 my_repertoire = tcrFOOBAR.tcrRepertoire(my_configuration, args.repertoire_size, AB_frequency=args.receptor_ratio, log=log.getChild('tcrRepertoire'))
 
 # Populate the repertiore

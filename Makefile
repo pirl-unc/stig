@@ -13,6 +13,9 @@ data/*.fasta
 
 
 DEVEL_OPTS=\
+--chr7-filename=./data/chr7.fa \
+--chr14-filename=./data/chr14.fa \
+--tcell-data=./data/tcell_receptor.tsv \
 --output=test_output \
 --repertoire-size=10 \
 --population-size=100 \
