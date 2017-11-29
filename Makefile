@@ -1,9 +1,12 @@
 
 
 TCR_OPTS=\
+--chr7-filename=./data/chr7.fa \
+--chr14-filename=./data/chr14.fa \
+--tcell-data=./data/tcell_receptor.tsv \
 --output=test_output \
---repertoire-size=10 \
---population-size=100 \
+--repertoire-size=100 \
+--population-size=10000 \
 --read-type=single \
 --sequence-type=dna \
 --sequence-count=500 \
@@ -17,8 +20,8 @@ DEVEL_OPTS=\
 --chr14-filename=./data/chr14.fa \
 --tcell-data=./data/tcell_receptor.tsv \
 --output=test_output \
---repertoire-size=10 \
---population-size=100 \
+--repertoire-size=100 \
+--population-size=10000 \
 --read-type=paired \
 --sequence-type=rna \
 --sequence-count=5 \

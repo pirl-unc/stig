@@ -154,7 +154,7 @@ class tcrConfig:
 						else:
 								new_segment['strand'] = strand
 
-						if( not re.match('^([VDJ]-REGION)|([VDJ]-GENE-UNIT)|(L-V-GENE-UNIT)|(EX\d+)$', region) ):
+						if( not re.match('^([VDJ]-REGION)|([VDJ]-GENE-UNIT)|(L-V-GENE-UNIT)|(EX\d+)|(L-PART1\+L-PART2)$', region) ):
 								self.log.info("Invalid region: %s on line %d, ignoring", region, line_number)
 								continue
 						else:
@@ -214,10 +214,10 @@ class tcrConfig:
 												x,allele,x,functionality,region,x,x,x,x,x,x,x,x,x,x,x = line.split("|",)
 												matches = re.match('^(TR[ABGD](?:[VDJ]\d+(?:-\d+)?|(?:C\d*)))\*(\d+)$', allele)
 												if( matches is None ):
-														self.log.warning("Skipping unsupported allele name %s", allele)		
+														self.log.warning("Skipping unsupported gene allele name %s", allele)		
 														continue
 
-												if( re.match('^(V-REGION|J-REGION|EX\d|D-REGION)$', region) ):
+												if re.match('^(V-REGION|J-REGION|EX\d|D-REGION|L-PART1\+L-PART2)$', region):
 														gene, allele_name = matches.groups()
 														
 														segments = filter(lambda e:e['gene'] == gene and e['region'] == region,
@@ -261,8 +261,7 @@ class tcrConfig:
 										raise ValueError("In file, line does not appear to be FASTA formatted: ",
 																			file, line_num, line)
 								
-				self.log.debug("readAlleles(): Processing complete")
-
+				self.log.info("readAlleles(): Processing complete")
 
 		def setChromosomeFiles(self, chr7=None, chr14=None):
 
@@ -687,18 +686,23 @@ class tcrConfig:
 				
 				# If a [VDJ]-REGION provided, find the GENE-UNIT for the given segment
 				if re.match('^[VDJ]-REGION', self.receptorSegment[segmentIndex]['region'] ):
-						geneIndex = 0
-						for i in range(0, len(self.receptorSegment)):
-								if( self.receptorSegment[i]['gene'] == self.receptorSegment[segmentIndex]['gene'] and
-										re.match('^(L-V|D|J)-GENE-UNIT$', self.receptorSegment[i]['region']) ):
-										geneIndex = i
-										break
-						geneCoordinates = (self.receptorSegment[geneIndex]['start_position'], self.receptorSegment[geneIndex]['end_position'], self.receptorSegment[geneIndex]['strand'])
-						alleleCoordinates = (self.receptorSegment[segmentIndex]['start_position'], self.receptorSegment[segmentIndex]['end_position'], self.receptorSegment[segmentIndex]['strand'])
-
-
-						# Replace the TRC receptor sequence within the GENE-UNIT sequence
+						# Replace the V-REGION and L-PART1+L-PART2 sequences within the GENE-UNIT sequence
 						if self.receptorSegment[segmentIndex]['region'] == 'V-REGION':
+								geneUnits = filter(lambda x:x['gene'] == self.receptorSegment[segmentIndex]['gene'] and
+																	 re.match('^(L-V|D|J)-GENE-UNIT$', x['region']), self.receptorSegment)
+								if len(geneUnits) == 0:
+										self.log.critical("No corresponding GENE-UNIT found for gene %s", self.receptorSegment[segmentIndex]['gene'])
+										exit(-10)
+								elif len(geneUnits) > 1:
+										self.log.critical("Too many GENE-UNITs found for gene %s", self.receptorSegment[segmentIndex]['gene'])
+										exit(-10)
+
+								geneUnit = geneUnits[0]
+
+								geneCoordinates = (geneUnit['start_position'], geneUnit['end_position'], geneUnit['strand'])
+								alleleCoordinates = (self.receptorSegment[segmentIndex]['start_position'], self.receptorSegment[segmentIndex]['end_position'], self.receptorSegment[segmentIndex]['strand'])
+
+
 								geneData = self.readChromosome(chromosome, geneCoordinates[0], geneCoordinates[1], geneCoordinates[2])
 
 								geneHeaderLength = alleleCoordinates[0] - geneCoordinates[0]
@@ -713,10 +717,17 @@ class tcrConfig:
 															 len(geneData))
 						
 								self.log.debug("Head:   %s", geneData[0:geneHeaderLength])
-								self.log.debug("Allele: %s", geneData[geneHeaderLength:geneHeaderLength+geneAlleleLength])
+								self.log.debug("Allele: %s", self.receptorSegment[segmentIndex]['allele'][segmentAllele])
 								self.log.debug("Tail:   %s", geneData[geneHeaderLength+geneAlleleLength:])
 								dnaData = geneData[0:geneHeaderLength] + self.receptorSegment[segmentIndex]['allele'][segmentAllele]
-								rnaData = geneData[0:geneHeaderLength] + self.receptorSegment[segmentIndex]['allele'][segmentAllele]
+								# Now substitute the L-PART allele in RNA (as the geneHeader portion has an intron in it)
+								lPartSegments = filter(lambda x:x['gene'] == self.receptorSegment[segmentIndex]['gene'] and
+																			 x['region'] == 'L-PART1+L-PART2', self.receptorSegment)
+								if len(lPartSegments) == 1:
+										rnaData = lPartSegments[0]['allele'][random.choice(lPartSegments[0]['allele'].keys())] + self.receptorSegment[segmentIndex]['allele'][segmentAllele]
+								else:
+										self.log.error("Did not find matching L-PART segment for this V-REGION")
+										exit(-10)
 
 								self.log.debug("Returning data for V segment")
 								return [ dnaData.upper(), rnaData.upper() ]
