@@ -178,22 +178,22 @@ if( args.chr7_filename  is None or
 		log.critical("Required command-line options missing (chr7-filename, chr14-filename, tcell-data or allele files).  See --help")
 		exit(-10)
 
+# Create our configuration object
+my_configuration = tcrFOOBAR.tcrConfig(log=log.getChild('tcrConfig'))
+my_configuration.readTCRConfig(args.tcell_data)
+my_configuration.readAlleles( args.allele_files )
+my_configuration.setChromosomeFiles(chr7=args.chr7_filename, chr14=args.chr14_filename)
+		
 # Load our TCR repertoire from file, if requested
 my_repertoire = None
-my_configuration = None
 if args.load_population is not None:
 		with open(args.load_population, 'rb') as fp:
 				my_repertoire = cPickle.load(fp)
-				my_repertoire.thaw(log.getChild('tcrRepertoire'))
-				my_configuration = my_repertoire.config
+				my_repertoire.thaw(log=log.getChild('tcrRepertoire'), config=my_configuration)
+
 else:
 		log.info("Generating new repertoire")
 
-		# Create our configuration and repertoire objects, per the command-line options given
-		my_configuration = tcrFOOBAR.tcrConfig(log=log.getChild('tcrConfig'))
-		my_configuration.readTCRConfig(args.tcell_data)
-		my_configuration.readAlleles( args.allele_files )
-		my_configuration.setChromosomeFiles(chr7=args.chr7_filename, chr14=args.chr14_filename)
 		my_repertoire = tcrFOOBAR.tcrRepertoire(my_configuration, args.repertoire_size, AB_frequency=args.receptor_ratio, log=log.getChild('tcrRepertoire'))
 
 		# Populate the repertiore

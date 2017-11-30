@@ -137,34 +137,6 @@ class tcrConfig:
 				self.log = None
 
 				
-		# freeze - Render this self object suitable for pickling (with pickle or
-    #          cPickle) Mostly this just involves discarding our self.log 
-		#          logger objects, as these contain filehandles that cannot
-		#          be serialized.
-		# 
-		# Args:
-		# none
-		# 
-		# Returns:
-		# A copy of this object
-    #
-		def freeze( self ):
-				self.rmLog()
-				return self
-		
-		# thaw - Recover this object after being serialized
-		#        Currently, this involves re-establishing the logger objects
-		# 
-		# Args:
-		# log - Optional.  A logger object to log to.  If empty or None, will 
-		#       disable logging
-		# 
-		# Returns: Nothing
-		# 
-		def thaw( self, log=None ):
-				self.setLog(log)
-		
-		
 		def readTCRConfig( self, filename ):
 				self.log.debug("Processing config file %s", filename)
 				open( filename, 'rU' )
@@ -1042,21 +1014,25 @@ class tcr:
     #
 		def freeze( self ):
 				self.rmLog()
-				self.config.freeze()
+				self.config = None
 				return self
 
 		# thaw - Recover this object after being serialized
-		#        Currently, this involves re-establishing the logger objects
-		# 
+		#        Currently, this involves re-establishing the logger and
+		#        config objects
 		# Args:
 		# log - Optional.  A logger object to log to.  If empty or None, will 
 		#       disable logging
-		# 
+		# config - Mandatory.  A tcrConfig object to use
+    #
 		# Returns: Nothing
 		#
-		def thaw( self, log=None ):
+		def thaw( self, log=None, config=None ):
 				self.setLog(log)
-				self.config.thaw(self.log.getChild('tcrConfig'))
+				if config is None:
+						self.log.critical("Configuration option is mandatory")
+						exit(-10)
+				self.config = config
 				
 		
 		def randomize( self ):
@@ -1175,7 +1151,7 @@ class tcrRepertoire:
 				self.rmLog()
 				for i in self.repertoire:
 						i.freeze()
-				self.config.freeze()		
+				self.config = None
 				return self
 
 		# thaw - Recover this object after being serialized
@@ -1184,15 +1160,21 @@ class tcrRepertoire:
 		# Args:
 		# log - Optional.  A logger object to log to.  If empty or None, will 
 		#       disable logging
-		# 
+		# config - Mandatory.  A tcrConfig object to use.
+    #
 		# Returns: Nothing
 		#
-		def thaw( self, log=None ):
+		def thaw( self, log=None, config=None ):
 				self.setLog(log)
+				if config is None:
+						self.log.critical("tcrRepertoire.thaw(): Configuration option is mandatory")
+						exit(-10)
 				for i in self.repertoire:
-						i.thaw(self.log.getChild('tcr') )
-				self.config.thaw( self.log.getChild('tcrConfig' ))
+						i.thaw(self.log.getChild('tcr'), config=config )
+				self.config = config
 				
+
+
 				
 		def populate( self, population_size, distribution, g_cutoff=3, cs_k=2, cs_cutoff=8 ):
 				self.log.info("populate() called...")
