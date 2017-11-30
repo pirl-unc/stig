@@ -6,6 +6,7 @@ import math
 import numpy
 import time
 
+
 # TCR configuration class
 #
 # Self variables:
@@ -100,6 +101,21 @@ class tcrConfig:
 				self.chr14Filename = None
 				self.chr14Offset = 0
 				self.chr14LineLength = 0
+
+				self.setLog(log)
+
+				return
+
+		# setLog - Configure our logging object
+		# 
+		# args:
+		# log - If a logging object, we will use this for our logging
+		#       If None, we will configure a new, non-functioning logging object
+		#       
+		# Returns:
+		#  nothing
+		# 
+		def setLog( self, log ):
 				if( isinstance(log, logging.Logger) ):
 						self.log = log
 				elif log is None:
@@ -108,8 +124,46 @@ class tcrConfig:
 				else:
 						raise ValueError("Log object for tcrConfig must be a logging.Logger (or None)")
 
-				return
 
+				
+		# rmLog - Remove our logging object
+		#         This is usually called prior to serializing this object, as 
+		#         logger objects cannot be serialized. see setLog()
+		# 
+		# Args: none
+		# Returns: nothing
+		# 
+		def rmLog( self ):
+				self.log = None
+
+				
+		# freeze - Render this self object suitable for pickling (with pickle or
+    #          cPickle) Mostly this just involves discarding our self.log 
+		#          logger objects, as these contain filehandles that cannot
+		#          be serialized.
+		# 
+		# Args:
+		# none
+		# 
+		# Returns:
+		# A copy of this object
+    #
+		def freeze( self ):
+				self.rmLog()
+				return self
+		
+		# thaw - Recover this object after being serialized
+		#        Currently, this involves re-establishing the logger objects
+		# 
+		# Args:
+		# log - Optional.  A logger object to log to.  If empty or None, will 
+		#       disable logging
+		# 
+		# Returns: Nothing
+		# 
+		def thaw( self, log=None ):
+				self.setLog(log)
+		
 		
 		def readTCRConfig( self, filename ):
 				self.log.debug("Processing config file %s", filename)
@@ -322,8 +376,8 @@ class tcrConfig:
 								data = data.translate(string.maketrans('CATG', 'GTAC'))
 								data = data[::-1]
 
-						#self.log.debug("Read: %s (%db)", data, len(data))
-						return data
+				#self.log.debug("Read: %s (%db)", data, len(data))
+				return data
 
 
 				
@@ -914,14 +968,8 @@ class tcr:
 						self.config = config
 				else:
 						raise ValueError("config object must be a tcrConfig")
-				
-				if( isinstance(log, logging.Logger) ):
-						self.log = log
-				elif log is None:
-						self.log = logging.getLogger(__name__)
-						self.log.setLevel(99) # A high level, effectively disabling logging
-				else:
-						raise ValueError("Log object for tcrConfig must be a logging.Logger (or None)")
+
+				self.setLog(log)
 
 				if( AB_frequency >= 0 and
 						AB_frequency <= 1):
@@ -950,6 +998,66 @@ class tcr:
 
 				return
 
+		# setLog - Configure our logging object
+		# 
+		# args:
+		# log - If a logging object, we will use this for our logging
+		#       If None, we will configure a new, non-functioning logging object
+		#       
+		# Returns:
+		#  nothing
+		# 
+		def setLog( self, log ):
+				if( isinstance(log, logging.Logger) ):
+						self.log = log
+				elif log is None:
+						self.log = logging.getLogger(__name__)
+						self.log.setLevel(99) # A high level, effectively disabling logging
+				else:
+						raise ValueError("Log object for tcr must be a logging.Logger (or None)")
+
+
+				
+		# rmLog - Remove our logging object
+		#         This is usually called prior to serializing this object, as 
+		#         logger objects cannot be serialized. see setLog()
+		# 
+		# Args: none
+		# Returns: nothing
+		# 
+		def rmLog( self ):
+				self.log = None
+
+				
+		# freeze - Render this self object suitable for pickling (with pickle or
+    #          cPickle) Mostly this just involves discarding our self.log 
+		#          logger objects, as these contain filehandles that cannot
+		#          be serialized.
+		# 
+		# Args:
+		# none
+		# 
+		# Returns:
+		# A copy of this object
+    #
+		def freeze( self ):
+				self.rmLog()
+				self.config.freeze()
+				return self
+
+		# thaw - Recover this object after being serialized
+		#        Currently, this involves re-establishing the logger objects
+		# 
+		# Args:
+		# log - Optional.  A logger object to log to.  If empty or None, will 
+		#       disable logging
+		# 
+		# Returns: Nothing
+		#
+		def thaw( self, log=None ):
+				self.setLog(log)
+				self.config.thaw(self.log.getChild('tcrConfig'))
+				
 		
 		def randomize( self ):
 				self.log.info("Starting randomize()")
@@ -1004,15 +1112,9 @@ class tcrRepertoire:
 						self.config = config
 				else:
 						raise ValueError("config object must be a tcrConfig")
-				
-				if( isinstance(log, logging.Logger) ):
-						self.log = log
-				elif log is None:
-						self.log = logging.getLogger(__name__)
-						self.log.setLevel(99) # A high level, effectively disabling logging
-				else:
-						raise ValueError("Log object for tcrConfig must be a logging.Logger (or None)")
 
+				self.setLog(log)
+				
 				self.log.debug("Initializing repertoire of %d receptors", size)
 			 	self.AB_frequency = AB_frequency
 				self.repertoire = [None] * size
@@ -1025,8 +1127,73 @@ class tcrRepertoire:
 				self.distribution = None
 
 				return
-
 		
+		# setLog - Configure our logging object
+		# 
+		# args:
+		# log - If a logging object, we will use this for our logging
+		#       If None, we will configure a new, non-functioning logging object
+		#       
+		# Returns:
+		#  nothing
+		# 
+		def setLog( self, log ):
+				if( isinstance(log, logging.Logger) ):
+						self.log = log
+				elif log is None:
+						self.log = logging.getLogger(__name__)
+						self.log.setLevel(99) # A high level, effectively disabling logging
+				else:
+						raise ValueError("Log object for tcrConfig must be a logging.Logger (or None)")
+
+
+				
+		# rmLog - Remove our logging object
+		#         This is usually called prior to serializing this object, as 
+		#         logger objects cannot be serialized. see setLog()
+		# 
+		# Args: none
+		# Returns: nothing
+		# 
+
+		def rmLog( self ):
+				self.log = None
+
+
+		# freeze - Render this self object suitable for pickling (with pickle or
+    #          cPickle) Mostly this just involves discarding our self.log 
+		#          logger objects, as these contain filehandles that cannot
+		#          be serialized.
+		# 
+		# Args:
+		# none
+		# 
+		# Returns:
+		# A copy of this object
+    #
+		def freeze( self ):
+				self.rmLog()
+				for i in self.repertoire:
+						i.freeze()
+				self.config.freeze()		
+				return self
+
+		# thaw - Recover this object after being serialized
+		#        Currently, this involves re-establishing the logger objects
+		# 
+		# Args:
+		# log - Optional.  A logger object to log to.  If empty or None, will 
+		#       disable logging
+		# 
+		# Returns: Nothing
+		#
+		def thaw( self, log=None ):
+				self.setLog(log)
+				for i in self.repertoire:
+						i.thaw(self.log.getChild('tcr') )
+				self.config.thaw( self.log.getChild('tcrConfig' ))
+				
+				
 		def populate( self, population_size, distribution, g_cutoff=3, cs_k=2, cs_cutoff=8 ):
 				self.log.info("populate() called...")
 				self.log.debug("Args: %s", (population_size, distribution, g_cutoff, cs_k, cs_cutoff))
@@ -1234,3 +1401,4 @@ class tcrRepertoire:
 						retval.append(stats)
 				
 				return retval
+				

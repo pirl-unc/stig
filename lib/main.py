@@ -16,6 +16,7 @@ from itertools import ifilter
 from itertools import ifilterfalse
 import logging
 import math
+import cPickle
 
 import tcrFOOBAR
 
@@ -49,7 +50,11 @@ parser.add_argument('--tcell-data', metavar='FILE',
 										help = "Filename of a tab-separated file with T cell receptor segments and reference gene coordinates")
 
 parser.add_argument("--output", metavar='BASENAME', default='tcr_synth',
-										help='Name of output fastq file.  This should be a basename, e.g. \'--output=foo\' will write to \'foo.fastq\', \'foo.statistics.csv\', etc.  Default is \'tcr_synth\'')
+										help='Basename for output files, e.g. \'--output=foo\' will write to \'foo.fastq\', \'foo.statistics.csv\', etc.  Default is \'tcr_synth\'')
+
+parser.add_argument("--load-population", metavar='FILE', type=str,
+										help='Load TCR population and repertoire data from FILE, rather than generating from scratch')
+
 parser.add_argument('--repertoire-size', metavar='N', type=int, default=10,
 										help='Size of the TCR repertoire (i.e. the number of unique TCRs that are generated).  Default is 10')
 parser.add_argument('--population-size', metavar='N', type=int, default=100,
@@ -64,10 +69,10 @@ parserGroup1.add_argument('--population-chisquare-parameters', metavar='k:cutoff
 													help='Parameters for the chi-square distribution.  Takes an argument formatted as \'k:cutoff\', where k - degrees of freedom.  Default is 3. cutoff - X-axis maximum.  Default is 8')
 
 parser.add_argument('--read-type', choices = ['paired', 'single'], default = 'single',
-										help='Generate either single or paired-end reads')
+										help='Generate either single or paired-end reads.  Default is single')
 parser.add_argument('--sequence-type', choices = ['dna', 'rna'], default = 'dna',
-										help='Generate sequences from simulated DNA or RNA')
-parser.add_argument("--sequence-count", metavar="SEQ", type=int, default=1000,
+										help='Generate sequences from simulated DNA or RNA. Default is DNA')
+parser.add_argument("--sequence-count", metavar="N", type=int, default=1000,
 										help='Number of sequences (reads) to generate.  Default is 1000')
 parser.add_argument("--read-length-mean", type=int, default=48,
 										help='The average length of reads in nucleotides. Default is 48')
@@ -99,9 +104,9 @@ parser.add_argument("--receptor-ratio", metavar="RATIO", type=float, default=0.9
 parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error', 'critical'], default='warning',
 										help='Logging level.  Default is warning and above')
 
-# Process our command-line arguments
 args = parser.parse_args()
 
+# Process our logging level arguments
 if( args.log_level == 'debug'):
   sh.setLevel(logging.DEBUG)
 elif( args.log_level =='info' ):
@@ -114,7 +119,6 @@ elif( args.log_level =='critical' ):
   sh.setLevel(logging.CRITICAL)
 else:
   log.error("Error: Unknown log level %s", args.log_level)
-
 
 
 # Process options 'display-degradation', 'degrade-logistic' and 'degrade-phred'
@@ -174,25 +178,35 @@ if( args.chr7_filename  is None or
 		log.critical("Required command-line options missing (chr7-filename, chr14-filename, tcell-data or allele files).  See --help")
 		exit(-10)
 
-		
-# Create our configuration and repertoire objects, per the command-line options given
-my_configuration = tcrFOOBAR.tcrConfig(log=log.getChild('tcrConfig'))
-my_configuration.readTCRConfig(args.tcell_data)
-my_configuration.readAlleles( args.allele_files )
-my_configuration.setChromosomeFiles(chr7=args.chr7_filename, chr14=args.chr14_filename)
-my_repertoire = tcrFOOBAR.tcrRepertoire(my_configuration, args.repertoire_size, AB_frequency=args.receptor_ratio, log=log.getChild('tcrRepertoire'))
+# Load our TCR repertoire from file, if requested
+my_repertoire = None
+my_configuration = None
+if args.load_population is not None:
+		with open(args.load_population, 'rb') as fp:
+				my_repertoire = cPickle.load(fp)
+				my_repertoire.thaw(log.getChild('tcrRepertoire'))
+				my_configuration = my_repertoire.config
+else:
+		log.info("Generating new repertoire")
 
-# Populate the repertiore
-if args.population_distribution == 'gaussian':
-		my_repertoire.populate(args.population_size, 'gaussian', g_cutoff = args.population_gaussian_parameters)
-elif args.population_distribution == 'chisquare':
-		matches = re.match('^((?:\d+)|(?:\d*.\d+)):((?:\d+)|(?:\d*.\d+))$', args.population_chisquare_parameters)
-		if( matches is not None and
-				len(matches.groups()) == 2 ):
-				k, cutoff = matches.groups()
-				my_repertoire.populate(args.population_size, 'chisquare', cs_k=float(k), cs_cutoff=float(cutoff))
-		else:
-				raise ValueError("Invalid chi-square parameters: %s" %args.population_chisquare_parameters)
+		# Create our configuration and repertoire objects, per the command-line options given
+		my_configuration = tcrFOOBAR.tcrConfig(log=log.getChild('tcrConfig'))
+		my_configuration.readTCRConfig(args.tcell_data)
+		my_configuration.readAlleles( args.allele_files )
+		my_configuration.setChromosomeFiles(chr7=args.chr7_filename, chr14=args.chr14_filename)
+		my_repertoire = tcrFOOBAR.tcrRepertoire(my_configuration, args.repertoire_size, AB_frequency=args.receptor_ratio, log=log.getChild('tcrRepertoire'))
+
+		# Populate the repertiore
+		if args.population_distribution == 'gaussian':
+				my_repertoire.populate(args.population_size, 'gaussian', g_cutoff = args.population_gaussian_parameters)
+		elif args.population_distribution == 'chisquare':
+				matches = re.match('^((?:\d+)|(?:\d*.\d+)):((?:\d+)|(?:\d*.\d+))$', args.population_chisquare_parameters)
+				if( matches is not None and
+						len(matches.groups()) == 2 ):
+						k, cutoff = matches.groups()
+						my_repertoire.populate(args.population_size, 'chisquare', cs_k=float(k), cs_cutoff=float(cutoff))
+				else:
+						raise ValueError("Invalid chi-square parameters: %s" %args.population_chisquare_parameters)
 				
 
 # Obtain our simulated reads
@@ -289,6 +303,10 @@ with open(statsFilename, 'w') as fp:
 		for i in my_repertoire.getStatistics():
 				fp.write(", ".join(str(e) for e in i) + "\n")
 
+# Write our repertoire object to a file
+populationFilename = args.output + '.population.bin'
+with open(populationFilename, 'wb') as fp:
+		cPickle.dump(my_repertoire.freeze(), fp)
 
 
 log.info("All actions complete")
