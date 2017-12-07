@@ -187,6 +187,7 @@ my_configuration.setChromosomeFiles(chr7=args.chr7_filename, chr14=args.chr14_fi
 # Load our TCR repertoire from file, if requested
 my_repertoire = None
 if args.load_population is not None:
+		print "Using previously saved T-cell population from %s, ignoring any --population... or --repertoire... options and using the settings from the saved file" % args.load_population
 		with open(args.load_population, 'rb') as fp:
 				my_repertoire = cPickle.load(fp)
 				my_repertoire.thaw(log=log.getChild('tcrRepertoire'), config=my_configuration)

@@ -1223,7 +1223,7 @@ class tcrRepertoire:
 						population_generated = 0
 						while population_generated < self.population_size:
 								self.log.info("Rolling %d individuals", self.population_size - population_generated)
-								for x in numpy.random.chisquare(cs_k, self.population_size):
+								for x in numpy.random.chisquare(cs_k, self.population_size - population_generated):
 										if( x >= cs_cutoff):
 												continue
 										# Scale the values to match our repertoire "buckets"
