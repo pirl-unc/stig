@@ -58,23 +58,34 @@ class tcrConfig:
 
 
 
+		# Define our probabilities for VDJ recombination likelihoods.
+		# The numbers for beta-chain likelihoods are loosely based on the work of J Freeman and R Warren as described below
+		# See: JDFreeman, RLWarren, et al "Profiling the T-cell receptor beta-chain repertoire by massively parallel sequencing",
+		#      Genome Research, 2009. https://doi.org/10.1101/gr.092924.109
+		#
+		
 		VDJprobability = [
-				( 'TRAV1-1', 0.15 ),
-				( 'TRAV20', 0.08 ),
-				( 'TRBV20-1', 0.45 ),
-				( 'TRBV6-2', 0.20 ),
-				( 'TRBV8-2', 0.15 ),
-				( 'TRGV1', 0.30 ),
-				( 'TRGV4', 0.18 ),
-				( 'TRGV8', 0.17 ),
-				( 'TRDV1', 0.21 ),
+#				( 'TRAV1-1', 0.15 ),
+#				( 'TRAV20', 0.08 ),
+				( 'TRBV20-1', 0.24 ),
+				( 'TRBV5-1', 0.125 ),
+				( 'TRBV29-1', 0.105 ),
+				( 'TRBV28', 0.051 ),
+				( 'TRBV10-3', 0.045 ),
+				( 'TRBV4-2', 0.04 ),
+				
+#				( 'TRGV1', 0.30 ),
+#				( 'TRGV4', 0.18 ),
+#				( 'TRGV8', 0.17 ),
+#				( 'TRDV1', 0.21 ),
 
-				('TRBV20-1', 'TRBJ2-1', 0.15 ),
+				('TRBV20-1', 'TRBJ2-1', 0.17 ),
 				('TRBV20-1', 'TRBJ1-1', 0.12 ),
 				('TRBV20-1', 'TRBJ2-7', 0.11 ),
 				('TRBV20-1', 'TRBJ1-5', 0.10 ),
 				('TRBV20-1', 'TRBJ2-3', 0.09 ),
 				('TRBV20-1', 'TRBJ2-2', 0.08 ),
+
 		]
 
 		# Define our probabilities for chewback and NT addition at VDJ junction sites
