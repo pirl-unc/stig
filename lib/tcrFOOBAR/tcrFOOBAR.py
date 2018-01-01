@@ -89,6 +89,9 @@ class tcrConfig:
 		]
 
 		# Define our probabilities for chewback and NT addition at VDJ junction sites
+		# Probabilities are defined by index of the number of nucleotides chewed or added
+		# e.g. Vchewback[3] is the probability that 3 nucleotides will be chewed from V segments
+		#
 		# All credit for these numbers go to J Freeman and R Warren for their analysis of the beta-chain TCR
 		# See: JDFreeman, RLWarren, et al "Profiling the T-cell receptor beta-chain repertoire by massively parallel sequencing",
 		#      Genome Research, 2009. https://doi.org/10.1101/gr.092924.109
