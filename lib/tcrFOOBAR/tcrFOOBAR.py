@@ -67,7 +67,7 @@ class tcrConfig:
 		VDJprobability = [
 #				( 'TRAV1-1', 0.15 ),
 #				( 'TRAV20', 0.08 ),
-				( 'TRBV20-1', 0.21 ),
+				( 'TRBV20-1', 0.24 ),
 				( 'TRBV5-1', 0.125 ),
 				( 'TRBV29-1', 0.105 ),
 				( 'TRBV28', 0.051 ),
