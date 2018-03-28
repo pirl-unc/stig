@@ -219,7 +219,7 @@ outputSequences = my_repertoire.simulateRead(args.sequence_count, args.sequence_
 																						 inner_mate_length_mean      = args.insert_length_mean,
 																						 inner_mate_length_sd        = args.insert_length_sd,
 																						 inner_mate_length_sd_cutoff = args.insert_length_sd_cutoff,
-																						 paired_end=pairedReadOpt)
+																						 paired_end = pairedReadOpt)
 
 # Write the read sequences to output file(s)
 if args.read_type == 'single':
