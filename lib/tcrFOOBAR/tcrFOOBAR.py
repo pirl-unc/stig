@@ -67,7 +67,7 @@ class tcrConfig:
 		VDJprobability = [
 #				( 'TRAV1-1', 0.15 ),
 #				( 'TRAV20', 0.08 ),
-				( 'TRBV20-1', 0.99 ),
+				( 'TRBV20-1', 0.21 ),
 				( 'TRBV5-1', 0.125 ),
 				( 'TRBV29-1', 0.105 ),
 				( 'TRBV28', 0.051 ),
@@ -1417,11 +1417,16 @@ class tcrRepertoire:
 				retval = []
 				for i in range(0, len(self.repertoire)):
 						CDR3_1, CDR3_2 = self.repertoire[i].getCDR3Sequences()
+
+						v1Allele = "%s*%s" % (self.config.receptorSegment[self.repertoire[i].V1[0]]['gene'], self.repertoire[i].V1[1])
+						v2Allele = "%s*%s" % (self.config.receptorSegment[self.repertoire[i].V2[0]]['gene'], self.repertoire[i].V2[1])
+						j1Allele = "%s*%s" % (self.config.receptorSegment[self.repertoire[i].J1[0]]['gene'], self.repertoire[i].J1[1])
+						j2Allele = "%s*%s" % (self.config.receptorSegment[self.repertoire[i].J2[0]]['gene'], self.repertoire[i].J2[1])
+				
 						stats = [ self.population[i],
-											CDR3_1, self.repertoire[i].RNA1[3], self.repertoire[i].DNA1[3],
-											CDR3_2, self.repertoire[i].RNA2[3], self.repertoire[i].DNA2[3] ]
+											v1Allele, j1Allele, CDR3_1, self.repertoire[i].RNA1[3], self.repertoire[i].DNA1[3],
+											v2Allele, j2Allele, CDR3_2, self.repertoire[i].RNA2[3], self.repertoire[i].DNA2[3] ]
 											
 						retval.append(stats)
-				
 				return retval
 				
