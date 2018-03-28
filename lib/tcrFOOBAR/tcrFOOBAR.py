@@ -67,7 +67,7 @@ class tcrConfig:
 		VDJprobability = [
 #				( 'TRAV1-1', 0.15 ),
 #				( 'TRAV20', 0.08 ),
-				( 'TRBV20-1', 0.24 ),
+				( 'TRBV20-1', 0.99 ),
 				( 'TRBV5-1', 0.125 ),
 				( 'TRBV29-1', 0.105 ),
 				( 'TRBV28', 0.051 ),
@@ -144,7 +144,7 @@ class tcrConfig:
 		#         This is usually called prior to serializing this object, as 
 		#         logger objects cannot be serialized. see setLog()
 		# 
-		# Args: none
+		# Arguments: none
 		# Returns: nothing
 		# 
 		def rmLog( self ):
@@ -326,7 +326,7 @@ class tcrConfig:
 				
 		def readChromosome(self, chromosome, start, end, strand):
 				self.log.info("readChromosome() starting")
-				self.log.debug("Args: %s %s %s %s", chromosome, start, end, strand)
+				self.log.debug("Arguments: %s %s %s %s", chromosome, start, end, strand)
 
 				if start < 0 or end < 0:
 						raise ValueError("Values must be non-zero integers")
@@ -369,7 +369,7 @@ class tcrConfig:
 				
 		# chooseRandomSegment - Pick an (appropriately) random V, D, J or C segment for a provided receptor type
 		#
-		# Args:
+		# Arguments:
 		# receptorType -  A, B, G, or D. For the receptor type (A = alpha, B = beta, etc.)
     # componentName - V, D, J, or C. For the requested segment type (V - Variable, D - Diversity, etc.) 
 		# V, D, J -       A 2-tuple consisting of an index to the V/D/J-REGION CDR3 component, and an allele name
@@ -378,7 +378,7 @@ class tcrConfig:
 		# A 2-tuple with an index and allele name to the requested component type
 		def chooseRandomSegment(self, receptorType, componentName, V=None, D=None, J=None):
 				self.log.debug("chooseRandomSegment() starting")
-				self.log.debug("Args: %s, %s, %s, %s, %s", receptorType, componentName, V, D, J)
+				self.log.debug("Arguments: %s, %s, %s, %s, %s", receptorType, componentName, V, D, J)
 
 				if( receptorType not in ('A', 'B', 'G', 'D') ):
 						raise ValueError("Receptor type must be either A, B, G, or D (alpha, beta, gamma or delta, respectively)")
@@ -522,7 +522,7 @@ class tcrConfig:
 		
 		def recombinate( self, V, D, J, C):
 				self.log.info("Recombinate() called...")
-				self.log.debug("Args: %s", (V, D, J, C))
+				self.log.debug("Arguments: %s", (V, D, J, C))
 
 				DNA = None
 				RNA = None
@@ -540,12 +540,10 @@ class tcrConfig:
 				self.log.debug("Calculating V segment...")
 				vSegmentDNA, vSegmentRNA = self.getSegmentSequences(V)
 				vChewback = self.roll(self.junctionProbability['Vchewback'])
-				vAdditions = self.getRandomNucleotides(self.roll(self.junctionProbability['VDaddition']))
 				if vChewback > 0:
 						vSegmentDNA = vSegmentDNA[0:-vChewback]
 						vSegmentRNA = vSegmentRNA[0:-vChewback]
-				vSegmentDNA = vSegmentDNA + vAdditions
-				vSegmentRNA = vSegmentRNA + vAdditions
+				vdAdditions = self.getRandomNucleotides(self.roll(self.junctionProbability['VDaddition']))
 
 				if D is not None:
 						self.log.debug("Calculating D segment...")
@@ -559,8 +557,8 @@ class tcrConfig:
 						if d5Chewback > 0:
 								dSegmentDNA = dSegmentDNA[0:-d5Chewback]
 								dSegmentRNA = dSegmentRNA[0:-d5Chewback]
-						dSegmentDNA = dSegmentDNA + djAdditions
-						dSegmentRNA = dSegmentRNA + djAdditions
+						dSegmentDNA = vdAdditions + dSegmentDNA + djAdditions
+						dSegmentRNA = vdAdditions + dSegmentRNA + djAdditions
 				else:
 						dSegmentDNA = ''
 						dSegmentRNA = ''
@@ -574,7 +572,7 @@ class tcrConfig:
 
 				self.log.debug("Calculating C segment...")
 				cSegmentDNA, cSegmentRNA = self.getSegmentSequences(C)
-
+				
 				self.log.debug("Calculating JC segment DNA...")
 				jcSegmentDNA = None
 				if self.receptorSegment[jIndex]['strand'] == 'forward':
@@ -598,24 +596,35 @@ class tcrConfig:
 						self.log.info("Invalid CDR3 sequence")
 						return None
 										
-				# Calculate our DNA/RNA 5' and 3' UTR areas
+				# Calculate the location of our DNA/RNA 5' and 3' UTR areas
+		    # We need to locate the corresponding L-V-GENE-UNIT to locate our start codon
 				dnaStartPosition = None
-				if self.receptorSegment[vIndex]['strand'] == 'forward':
-						dnaStartPosition = self.receptorSegment[vIndex]['end_position'] - len(vSegmentDNA)
-				else:
-						dnaStartPosition = self.receptorSegment[vIndex]['start_position'] + len(vSegmentDNA)
-				rnaStartPosition = dnaStartPosition
-				startStrand = self.receptorSegment[vIndex]['strand']
-				
 				dnaEndPosition = None
-				if self.receptorSegment[cIndex]['strand'] == 'forward':
+				geneUnits = filter(lambda x:x['gene'] == self.receptorSegment[vIndex]['gene'] and
+																	 re.match('^L-V-GENE-UNIT$', x['region']), self.receptorSegment)
+				if len(geneUnits) == 0:
+						self.log.critical("No corresponding GENE-UNIT found for gene %s", self.receptorSegment[segmentIndex]['gene'])
+						exit(-10)
+				elif len(geneUnits) > 1:
+						self.log.critical("Too many GENE-UNITs found for gene %s", self.receptorSegment[segmentIndex]['gene'])
+						exit(-10)
+
+				geneUnit = geneUnits[0]
+				geneCoordinates = (geneUnit['start_position'], geneUnit['end_position'], geneUnit['strand'])
+				if self.receptorSegment[vIndex]['strand'] == 'forward':
+						dnaStartPosition = geneUnit['start_position']
+						rnaStartPosition = dnaStartPosition
 						dnaEndPosition = self.receptorSegment[cIndex]['start_position'] + len(cSegmentDNA)
+						rnaEndPosition = dnaEndPosition
 				else:
+						dnaStartPosition = geneUnit['end_position']
+						rnaStartPosition = dnaStartPosition
 						dnaEndPosition = self.receptorSegment[cIndex]['end_position'] - len(cSegmentDNA)
-				rnaEndPosition = dnaEndPosition
+						rnaEndPosition = dnaEndPosition
+						
+				startStrand = self.receptorSegment[vIndex]['strand']
 				endStrand = self.receptorSegment[cIndex]['strand']
-
-
+				
 				DNA = (chromosome, dnaStartPosition, startStrand, dnaSequence, dnaEndPosition, endStrand)
 				RNA = (chromosome, rnaStartPosition, startStrand, rnaSequence, rnaEndPosition, endStrand)
 				self.log.debug("recombinate() returning DNA: %s \nRNA %s", DNA, RNA)
@@ -626,7 +635,7 @@ class tcrConfig:
 
 		# validateCDR3Sequence - Determine if an RNA sequence represents a valid CDR3
     # 
-    # Args:
+    # Arguments:
     # rnaSeq - RNA sequence to examine
     # 
     # Returns:
@@ -656,7 +665,7 @@ class tcrConfig:
 
 		# getCDR3Sequence - Obtain the CDR3 RNA sequence from an RNA sequence
     # 
-    # Args:
+    # Arguments:
     # rnaSeq - RNA sequence to examine
     # 
     # Returns:
@@ -677,7 +686,7 @@ class tcrConfig:
 
 		# getRandomNucleotides - Generate random nucleotide strings
     # 
-    # Args:
+    # Arguments:
     # count - Number of random bases
     # 
     # Returns:
@@ -700,7 +709,7 @@ class tcrConfig:
 		#      GENE-UNIT component and return the DNA sequence for that with the
 		#      appropriate allele DNA spliced in.
 		#
-		# Args:
+		# Arguments:
 		# segment - 2-tuple of 1) index into self.receptorSegment and 2) an allele name
 		#
 		# Returns:
@@ -709,7 +718,7 @@ class tcrConfig:
 		
 		def getSegmentSequences( self, segment ):
 				self.log.info("getSegmentSequences() called...")
-				self.log.debug("Args: %s", segment)
+				self.log.debug("Arguments: %s", segment)
 				if not len(segment) == 2:
 						raise ValueError("Argument must be a 2-tuple")
 				
@@ -817,7 +826,7 @@ class tcrConfig:
 
 				
 		# Choose an index from a probability array
-		# Args:
+		# Arguments:
 		# probability - array of probabilities (e.g. [0.5, 0.25, 0.125, 0.125] )
 		#               These values SHOULD total to 100%, as any remaining probability is implicitly assigned to the last index
 		# Returns:
@@ -835,9 +844,9 @@ class tcrConfig:
 				return index
 
 
-		# Degrade a sequence read, based on some logistic parameters
+		# Degrade a sequence read, based on some parameters
     #
-		# Args:
+		# Arguments:
     # read   - String.  The read to be degraded
 		# method - String.  The method for degradation to be performed. Valid values: "logistic" or "phred"
     # ident  - String. Label for this entry in a FASTQ formatted file
@@ -851,7 +860,7 @@ class tcrConfig:
     #           stdout.  Default is False.
     # [ phred ] are parameters for using a Phred score to determine the per-nucleotide error rate
 		# phred - Error rate probability per nucleotide.  This is Phred+33 format
-    #         (i.e. [!, I] as acceptable characters)
+    #         (i.e. range [!, I] as acceptable characters)
     #         If the read being degraded is longer than the given Phred string,
 		#         then the last base of the phred string is used for subsequent bases
     #         (e.g. "IIIIJJ55" is equivalent to "IIIIJJ5555555555555")
@@ -1008,7 +1017,7 @@ class tcr:
 		#         This is usually called prior to serializing this object, as 
 		#         logger objects cannot be serialized. see setLog()
 		# 
-		# Args: none
+		# Arguments: none
 		# Returns: nothing
 		# 
 		def rmLog( self ):
@@ -1020,7 +1029,7 @@ class tcr:
 		#          logger objects, as these contain filehandles that cannot
 		#          be serialized.
 		# 
-		# Args:
+		# Arguments:
 		# none
 		# 
 		# Returns:
@@ -1034,7 +1043,8 @@ class tcr:
 		# thaw - Recover this object after being serialized
 		#        Currently, this involves re-establishing the logger and
 		#        config objects
-		# Args:
+    #
+		# Arguments:
 		# log - Optional.  A logger object to log to.  If empty or None, will 
 		#       disable logging
 		# config - Mandatory.  A tcrConfig object to use
@@ -1085,7 +1095,7 @@ class tcr:
 
 		# getCDR3Sequences - Return RNA sequences of the CDR3 regions
     # 
-    # Args: None
+    # Arguments: None
     # 
     # Returns:
     # Array to CDR3 nucleotide strings for the two components of this T cell
@@ -1120,7 +1130,7 @@ class tcrRepertoire:
 		
 		# setLog - Configure our logging object
 		# 
-		# args:
+		# Arguments:
 		# log - If a logging object, we will use this for our logging
 		#       If None, we will configure a new, non-functioning logging object
 		#       
@@ -1142,7 +1152,7 @@ class tcrRepertoire:
 		#         This is usually called prior to serializing this object, as 
 		#         logger objects cannot be serialized. see setLog()
 		# 
-		# Args: none
+		# Arguments: none
 		# Returns: nothing
 		# 
 
@@ -1155,7 +1165,7 @@ class tcrRepertoire:
 		#          logger objects, as these contain filehandles that cannot
 		#          be serialized.
 		# 
-		# Args:
+		# Arguments:
 		# none
 		# 
 		# Returns:
@@ -1171,7 +1181,7 @@ class tcrRepertoire:
 		# thaw - Recover this object after being serialized
 		#        Currently, this involves re-establishing the logger objects
 		# 
-		# Args:
+		# Arguments:
 		# log - Optional.  A logger object to log to.  If empty or None, will 
 		#       disable logging
 		# config - Mandatory.  A tcrConfig object to use.
@@ -1188,11 +1198,26 @@ class tcrRepertoire:
 				self.config = config
 				
 
-
+		# populate - Populate the repertoire with T cells
+		#
+		# Arguments:
+		# population_size - Integer.  The number of T cells in this population.
+		#                   When population_size > repertoire size (as is normal)
+		#                   then some TCR CDR3 will be shared between individuals.
+		# distribution -    String.  Describes the distribution of individual cells
+		#                   across the repertiore.  Current options are:
+		#                   flat: Distribute cells across all repertoires equally
+		#                   even: Equal odds across all repertoires (may approach flat)
+		#                   gaussian: Gaussian distribution with g_cutoff standard
+		#                   deviations included in the repertiore
+		#                   chisquare: Chi Square distribution.  Takes cs_k and
+		#                   cs_cutoff arguments to describe k value and the largest
+		#                   x-axis value to include in the distribution, respectively
+		# 
 				
 		def populate( self, population_size, distribution, g_cutoff=3, cs_k=2, cs_cutoff=8 ):
 				self.log.info("populate() called...")
-				self.log.debug("Args: %s", (population_size, distribution, g_cutoff, cs_k, cs_cutoff))
+				self.log.debug("Arguments: %s", (population_size, distribution, g_cutoff, cs_k, cs_cutoff))
 				
 				if(distribution not in self.distribution_options):
 						raise ValueError("distribution must be one of ", self.distribution_options)
@@ -1256,7 +1281,7 @@ class tcrRepertoire:
 		# For fixed-length reads or inner mate distances, set the standard deviation to zero and the mean to whatever you'd like
 		
 		def simulateRead( self, count, space, distribution='gaussian', read_length_mean=25, read_length_sd=4, read_length_sd_cutoff=4, paired_end=False, inner_mate_length_mean=100, inner_mate_length_sd=8, inner_mate_length_sd_cutoff=4):
-				self.log.debug("dnaRead() called...")
+				self.log.debug("simulateRead() called...")
 
 				if space not in [ 'dna', 'rna' ]:
 						self.log.critical("simulateRead() argument 2 must be either 'dna' or 'rna'")
@@ -1378,11 +1403,13 @@ class tcrRepertoire:
 
 		# Return statistics about this repertoire, suitable for saving to a file
     #
-    # Args: none
+    # Arguments: none
     #
     # Returns:
     # Array with one element for each repertoire clone, formatted as so:
-    # [ Clone count, CDR3 sequence 1, CDR3 sequence 2 ]
+    # [ Clone count,
+		#   CDR3 sequence 1, RNA sequence 1, DNA sequence 1,
+		#   CDR3 sequence 2, RNA sequence 2, DNA sequence 2 ]
     #
     #
 		
