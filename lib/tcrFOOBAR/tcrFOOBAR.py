@@ -1413,8 +1413,11 @@ class tcrRepertoire:
     #
     #
 		
-		def getStatistics(self):
+		def getStatistics(self, addHeader = False):
 				retval = []
+				if addHeader == True:
+						retval.append("CELL_COUNT,VALLELE_1, JALLELE_1, CDR3_1, RNA_1, DNA_1, VALLELE_2, J_ALLELE_2, CDR3_2, RNA_2, DNA_2\n")
+
 				for i in range(0, len(self.repertoire)):
 						CDR3_1, CDR3_2 = self.repertoire[i].getCDR3Sequences()
 

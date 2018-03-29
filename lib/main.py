@@ -300,9 +300,8 @@ if degradeOptions is not None:
 # Write statistics to an output file
 statsFilename = args.output + '.statistics.csv'
 with open(statsFilename, 'w') as fp:
-		fp.write("CELL_COUNT, CDR3_1, RNA_1, DNA_1, CDR3_2, RNA_2, DNA_2\n")
-		for i in my_repertoire.getStatistics():
-				fp.write(", ".join(str(e) for e in i) + "\n")
+		for i in my_repertoire.getStatistics(addHeader = True):
+				fp.write(",".join(str(e) for e in i) + "\n")
 
 # Write our repertoire object to a file
 populationFilename = args.output + '.population.bin'
