@@ -59,7 +59,7 @@ class tcrConfig:
 
 
 		# Define our probabilities for VDJ recombination likelihoods.
-		# The numbers for beta-chain likelihoods are loosely based on the work of J Freeman and R Warren as described below
+		# The numbers for beta-chain likelihoods are adapted from figures in the work of J Freeman and R Warren as described below
 		# See: JDFreeman, RLWarren, et al "Profiling the T-cell receptor beta-chain repertoire by massively parallel sequencing",
 		#      Genome Research, 2009. https://doi.org/10.1101/gr.092924.109
 		#
@@ -228,11 +228,16 @@ class tcrConfig:
 				return
 
 
+		# readAlleles - Read allele info from fasta files with IMGT/GENE-DB compliant header lines
+    #
+    # See examples of these files at http://www.imgt.org/vquest/refseqh.html
+    # This function populates the "allele" dict inside our receptorSegment
+    # variable as described above
+		#
+		# Arguments:
+		# filenames - A string (or array of strings) containing the file name of a fasta-formatted
+    #             file with IMGT/GENE-DB headers describing gene allele sequences
 
-# Read allele info from fasta files with IMGT/GENE-DB compliant header lines
-# See examples of these files at http://www.imgt.org/vquest/refseqh.html
-# This function populates the "allele" dict inside our receptorSegment
-# variable as described above
 
 		def readAlleles( self, filenames ):
 
@@ -303,6 +308,16 @@ class tcrConfig:
 								
 				self.log.info("readAlleles(): Processing complete")
 
+
+		# setChromosomeFiles - Identify the location of necessary chromosome reference files
+		# 
+		# Arguments:
+		# chr7  - File name of chromsome 7 reference file
+		# chr14 - File name of chromosome 14 reference file
+		# 
+		# Returns:
+		# nothing
+
 		def setChromosomeFiles(self, chr7=None, chr14=None):
 
 				if not chr7 is None:
@@ -323,7 +338,14 @@ class tcrConfig:
 								if( self.chr14Offset > 10 ):
 										self.log.warning("Chromosome file %s does not appear to be in proper format, reading may fail", chr14)
 								
-				
+		# readChromosome - Request data from a chromosome reference
+		# 
+		# Arguments:
+		# chromosome - Chromsome reference number.  Currently supported values are 7 and 14.
+		# start - Start coordinates (IMGT)
+		# end   - End coordinates (IMGT)
+		# strand - Strand to read from.  Can be one of: forward, reverse.  Default is forward.
+		
 		def readChromosome(self, chromosome, start, end, strand):
 				self.log.info("readChromosome() starting")
 				self.log.debug("Arguments: %s %s %s %s", chromosome, start, end, strand)
@@ -1408,8 +1430,8 @@ class tcrRepertoire:
     # Returns:
     # Array with one element for each repertoire clone, formatted as so:
     # [ Clone count,
-		#   CDR3 sequence 1, RNA sequence 1, DNA sequence 1,
-		#   CDR3 sequence 2, RNA sequence 2, DNA sequence 2 ]
+		#   V allele 1, J allele 1, CDR3 sequence 1, RNA sequence 1, DNA sequence 1,
+		#   V allele 2, J allele 2, CDR3 sequence 2, RNA sequence 2, DNA sequence 2 ]
     #
     #
 		
