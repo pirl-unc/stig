@@ -1,5 +1,5 @@
 >M12887|TRBC1*01|Homo sapiens|F|EX1|g,213..598|387 nt|1|+1|-1| | |387+0=387| | |
-gaggacctgaacaaggtgttcccacccgaggtcgctgtgtttgagccatcagaagcagag
+aggacctgaacaaggtgttcccacccgaggtcgctgtgtttgagccatcagaagcagag
 atctcccacacccaaaaggccacactggtgtgcctggccacaggcttcttccccgaccac
 gtggagctgagctggtgggtgaatgggaaggaggtgcacagtggggtcagcacggacccg
 cagcccctcaaggagcagcccgccctcaatgactccagatactgcctgagcagccgcctg
@@ -14,7 +14,7 @@ gccaccctgtatgctgtgctggtcagcgcccttgtgttgatggccatg
 >M12887|TRBC1*01|Homo sapiens|F|EX4|1640..1657|18 nt|1| | | | |18+0=18| | |
 gtcaagagaaaggatttc
 >L36092|TRBC1*02|Homo sapiens|F|EX1|g,645749..646134|387 nt|1|+1|-1| | |387+0=387| | |
-gaggacctgaacaaggtgttcccacccgaggtcgctgtgtttgagccatcagaagcagag
+aggacctgaacaaggtgttcccacccgaggtcgctgtgtttgagccatcagaagcagag
 atctcccacacccaaaaggccacactggtgtgcctggccacaggcttcttccccgaccac
 gtggagctgagctggtgggtgaatgggaaggaggtgcacagtggggtcagcacagacccg
 cagcccctcaaggagcagcccgccctcaatgactccagatactgcctgagcagccgcctg
@@ -29,7 +29,7 @@ gccaccctgtatgctgtgctggtcagcgcccttgtgttgatggccatg
 >L36092|TRBC1*02|Homo sapiens|F|EX4|647176..647193|18 nt|1| | | | |18+0=18| | |
 gtcaagagaaaggatttc
 >M12888|TRBC2*01|Homo sapiens|F|EX1|g,154..539|387 nt|1|+1|-1| | |387+0=387| | |
-gaggacctgaaaaacgtgttcccacccgaggtcgctgtgtttgagccatcagaagcagag
+aggacctgaaaaacgtgttcccacccgaggtcgctgtgtttgagccatcagaagcagag
 atctcccacacccaaaaggccacactggtgtgcctggccacaggcttctaccccgaccac
 gtggagctgagctggtgggtgaatgggaaggaggtgcacagtggggtcagcacagacccg
 cagcccctcaaggagcagcccgccctcaatgactccagatactgcctgagcagccgcctg
@@ -44,7 +44,7 @@ gccaccttgtatgccgtgctggtcagtgccctcgtgctgatggccatg
 >M12888|TRBC2*01|Homo sapiens|F|EX4|1616..1639|24 nt|1| | | | |24+0=24| | |
 gtcaagagaaaggattccagaggc
 >L36092|TRBC2*02|Homo sapiens|F|EX1|g,655095..655480|387 nt|1|+1|-1| | |387+0=387| | |
-gaggacctgaaaaacgtgttcccacccgaggtcgctgtgtttgagccatcagaagcagag
+aggacctgaaaaacgtgttcccacccgaggtcgctgtgtttgagccatcagaagcagag
 atctcccacacccaaaaggccacactggtatgcctggccacaggcttctaccccgaccac
 gtggagctgagctggtgggtgaatgggaaggaggtgcacagtggggtcagcacagacccg
 cagcccctcaaggagcagcccgccctcaatgactccagatactgcctgagcagccgcctg
