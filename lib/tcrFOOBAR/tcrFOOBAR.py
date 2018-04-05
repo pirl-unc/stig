@@ -63,10 +63,22 @@ class tcrConfig:
 		# See: JDFreeman, RLWarren, et al "Profiling the T-cell receptor beta-chain repertoire by massively parallel sequencing",
 		#      Genome Research, 2009. https://doi.org/10.1101/gr.092924.109
 		#
-		
+		# Examples
+		#
+		# 15% chance of choosing TRAV1-1 when selecting an alpha chain:
+		#				( 'TRAV1-1', 0.15 ),
+		# 
+		#
+		# 25% chance of choosing TRAJ22 if TRAV20 was the chosen V-segment for an alpha chain: 
+		#				('TRAV20', 'TRAJ22', 0.25),
+		#
+		# Other examples for gamma and delta regions:
+		#				( 'TRGV1', 0.30 ),
+		#				( 'TRGV4', 0.18 ),
+		#				( 'TRGV8', 0.17 ),
+		#				( 'TRDV1', 0.21 ),
+
 		VDJprobability = [
-#				( 'TRAV1-1', 0.15 ),
-#				( 'TRAV20', 0.08 ),
 				( 'TRBV20-1', 0.24 ),
 				( 'TRBV5-1', 0.125 ),
 				( 'TRBV29-1', 0.105 ),
@@ -74,21 +86,12 @@ class tcrConfig:
 				( 'TRBV10-3', 0.045 ),
 				( 'TRBV4-2', 0.04 ),
 				
-#				( 'TRGV1', 0.30 ),
-#				( 'TRGV4', 0.18 ),
-#				( 'TRGV8', 0.17 ),
-#				( 'TRDV1', 0.21 ),
-
 				('TRBV20-1', 'TRBJ2-1', 0.17 ),
 				('TRBV20-1', 'TRBJ1-1', 0.12 ),
 				('TRBV20-1', 'TRBJ2-7', 0.11 ),
 				('TRBV20-1', 'TRBJ1-5', 0.10 ),
 				('TRBV20-1', 'TRBJ2-3', 0.09 ),
 				('TRBV20-1', 'TRBJ2-2', 0.08 ),
-				#DELETEME
-				('TRAV20', 0.99),
-				('TRAV20', 'TRAJ22', 0.99),
-				#DELETEME
 
 		]
 
@@ -535,6 +538,7 @@ class tcrConfig:
 						self.log.debug("Examining %s, cumulative: %0.3f", i, cumulativeProbability)
 						if rand < cumulativeProbability:
 								alleles = self.receptorSegment[segmentIndex]['allele'].keys()
+								self.log.debug("Allele choices: %s", ', '.join(alleles))
 								random.shuffle(alleles)
 								allele = alleles[0]
 								self.log.info("Choosing %d(%s) allele %s", segmentIndex, self.receptorSegment[segmentIndex]['gene'], allele)
@@ -564,14 +568,6 @@ class tcrConfig:
 				vIndex, vAllele = V
 				jIndex, jAllele = J
 				cIndex, cAllele = C
-				#DELETEME
-				self.junctionProbability['Vchewback'] = [1,0,0]
-				self.junctionProbability['VDaddition'] = [1,0,0]
-				self.junctionProbability['D5chewback'] = [1,0]
-				self.junctionProbability['D3chewback'] = [1,0]
-				self.junctionProbability['DJaddition'] = [1,0]
-				self.junctionProbability['Jchewback'] = [1,0,0]
-				#DELETEME
 				
 				chromosome = None
 				if re.match('^7', self.receptorSegment[jIndex]['chromosome']):
@@ -627,6 +623,7 @@ class tcrConfig:
 				rnaSequence = vSegmentRNA + dSegmentRNA + jSegmentRNA + cSegmentRNA
 
 				self.log.debug("Validating RNA: %s", rnaSequence)
+
 				# Ensure string is in-frame first...
 				matches = re.match('^ATG((?:[CTAG]{3})+)$', rnaSequence)
 				if matches is None:
@@ -640,7 +637,6 @@ class tcrConfig:
 						self.log.critical("Invalid CDR3: Stop codon found in sequence...")
 						self.log.critical("%s", '.'.join(matches.groups()))
 						self.log.critical("%s", '_'.join([vSegmentRNA, dSegmentRNA, jSegmentRNA, cSegmentRNA]))
-						#exit(4)
 						return None
 
 				# Continue only if our CDR3 sequence is valid
@@ -825,7 +821,11 @@ class tcrConfig:
 								lPartSegments = filter(lambda x:x['gene'] == self.receptorSegment[segmentIndex]['gene'] and
 																			 x['region'] == 'L-PART1+L-PART2', self.receptorSegment)
 								if len(lPartSegments) == 1:
-										rnaData = lPartSegments[0]['allele'][random.choice(lPartSegments[0]['allele'].keys())] + self.receptorSegment[segmentIndex]['allele'][segmentAllele]
+										if segmentAllele in lPartSegments[0]['allele']:
+												rnaData = lPartSegments[0]['allele'][segmentAllele] + self.receptorSegment[segmentIndex]['allele'][segmentAllele]
+										else:
+												rnaData = lPartSegments[0]['allele'][random.choice(lPartSegments[0]['allele'].keys())] + self.receptorSegment[segmentIndex]['allele'][segmentAllele]
+										
 								else:
 										self.log.error("Did not find matching L-PART segment for this V-REGION")
 										exit(-10)
