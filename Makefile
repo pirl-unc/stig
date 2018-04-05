@@ -24,7 +24,6 @@ DEVEL_OPTS=\
 --population-size=1000 \
 --read-type=paired \
 --sequence-type=rna \
---load-population=test_output.population.bin \
 --sequence-count=5 \
 --read-length-mean=48 \
 --read-length-sd=0 \
@@ -34,7 +33,10 @@ DEVEL_OPTS=\
 data/*.fasta
 
 TEST_OPTS=\
---log-level=warning \
+--chr7-filename=./data/chr7.fa \
+--chr14-filename=./data/chr14.fa \
+--tcell-data=./data/tcell_receptor.tsv \
+--log-level=debug \
 data/*.fasta
 
 TR_BIN=/usr/bin/tr
@@ -55,7 +57,8 @@ devel:
 
 
 # Test targets
-test: test_help test_display_degradation test_chisquare
+test: test_help test_display_degradation
+	./lib/test.py $(TEST_OPTS)
 
 test_help:
 	./lib/main.py --help
@@ -63,5 +66,3 @@ test_help:
 test_display_degradation:
 	./lib/main.py --degrade-phred='555555555555' --degrade-variability=0.5 --display-degradation
 
-test_chisquare:
-	./lib/main.py --population-distribution=chisquare $(TEST_OPTS)

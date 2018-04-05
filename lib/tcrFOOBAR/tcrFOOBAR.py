@@ -85,6 +85,10 @@ class tcrConfig:
 				('TRBV20-1', 'TRBJ1-5', 0.10 ),
 				('TRBV20-1', 'TRBJ2-3', 0.09 ),
 				('TRBV20-1', 'TRBJ2-2', 0.08 ),
+				#DELETEME
+				('TRAV20', 0.99),
+				('TRAV20', 'TRAJ22', 0.99),
+				#DELETEME
 
 		]
 
@@ -92,12 +96,20 @@ class tcrConfig:
 		# Probabilities are defined by index of the number of nucleotides chewed or added
 		# e.g. Vchewback[3] is the probability that 3 nucleotides will be chewed from V segments
 		#
-		# All credit for these numbers go to J Freeman and R Warren for their analysis of the beta-chain TCR
+		# Vchewback   - Chewback for V region
+		# VJadditions - Nucleotide additions during VJ fusion (alpha/gamma chains)
+		# D5chewback  - Chewback for D region adjacent to V region
+		# D3chewback  - Chewback for D region adjacent to J region
+		# DJadditions - Nucleotide additions during DJ fusion (beta/delta chains)
+		# Jchewback   - Chewback for J region
+		#
+		# Any/all credit for these numbers go to J Freeman and R Warren for their analysis of the beta-chain TCR
 		# See: JDFreeman, RLWarren, et al "Profiling the T-cell receptor beta-chain repertoire by massively parallel sequencing",
 		#      Genome Research, 2009. https://doi.org/10.1101/gr.092924.109
 		#
 		junctionProbability = {
 				'Vchewback': [ 0.2384, 0.1629, 0.1008, 0.1159, 0.1359, 0.1044, 0.0743, 0.0391, 0.0152, 0.0061, 0.0043, 0.0022, 0.0004, 0.000044],
+				'VJaddition': [0.1625, 0.1179, 0.1466, 0.1403, 0.1330, 0.0817, 0.0635, 0.048, 0.0357, 0.0233, 0.0184, 0.0073, 0.0073, 0.0071, 0.0033, 0.0013, 0.0009, 0.0005, 0.0002, 0.0004, 0.0002, 0, 0.0009],
 				'VDaddition': [0.1625, 0.1179, 0.1466, 0.1403, 0.1330, 0.0817, 0.0635, 0.048, 0.0357, 0.0233, 0.0184, 0.0073, 0.0073, 0.0071, 0.0033, 0.0013, 0.0009, 0.0005, 0.0002, 0.0004, 0.0002, 0, 0.0009],
 				'D5chewback': [ 0.3231, 0.1683, 0.1299, 0.0746, 0.1077, 0.0555, 0.0504, 0.0444, 0.0462 ],
 				'D3chewback': [ 0.2401, 0.1621, 0.2431, 0.2072, 0.0631, 0.0355, 0.0202, 0.0133, 0.0153 ],
@@ -552,7 +564,15 @@ class tcrConfig:
 				vIndex, vAllele = V
 				jIndex, jAllele = J
 				cIndex, cAllele = C
-
+				#DELETEME
+				self.junctionProbability['Vchewback'] = [1,0,0]
+				self.junctionProbability['VDaddition'] = [1,0,0]
+				self.junctionProbability['D5chewback'] = [1,0]
+				self.junctionProbability['D3chewback'] = [1,0]
+				self.junctionProbability['DJaddition'] = [1,0]
+				self.junctionProbability['Jchewback'] = [1,0,0]
+				#DELETEME
+				
 				chromosome = None
 				if re.match('^7', self.receptorSegment[jIndex]['chromosome']):
 						chromosome = 7
@@ -565,13 +585,13 @@ class tcrConfig:
 				if vChewback > 0:
 						vSegmentDNA = vSegmentDNA[0:-vChewback]
 						vSegmentRNA = vSegmentRNA[0:-vChewback]
-				vdAdditions = self.getRandomNucleotides(self.roll(self.junctionProbability['VDaddition']))
 
 				if D is not None:
 						self.log.debug("Calculating D segment...")
 						dSegmentDNA, dSegmentRNA = self.getSegmentSequences(D)
 						d5Chewback = self.roll(self.junctionProbability['D5chewback'])
 						d3Chewback = self.roll(self.junctionProbability['D3chewback'])
+						vdAdditions = self.getRandomNucleotides(self.roll(self.junctionProbability['VDaddition']))
 						djAdditions = self.getRandomNucleotides(self.roll(self.junctionProbability['DJaddition']))
 						if d3Chewback > 0:
 								dSegmentDNA = dSegmentDNA[d3Chewback:]
@@ -582,8 +602,8 @@ class tcrConfig:
 						dSegmentDNA = vdAdditions + dSegmentDNA + djAdditions
 						dSegmentRNA = vdAdditions + dSegmentRNA + djAdditions
 				else:
-						dSegmentDNA = ''
-						dSegmentRNA = ''
+						dSegmentDNA = self.getRandomNucleotides(self.roll(self.junctionProbability['VJaddition']))
+						dSegmentRNA = dSegmentDNA
 						
 				self.log.debug("Calculating J segment...")
 				jChewback = self.roll(self.junctionProbability['Jchewback'])
@@ -606,16 +626,26 @@ class tcrConfig:
 				dnaSequence = vSegmentDNA + dSegmentDNA + jSegmentDNA + jcSegmentDNA + cSegmentDNA
 				rnaSequence = vSegmentRNA + dSegmentRNA + jSegmentRNA + cSegmentRNA
 
-				self.log.debug("%s", rnaSequence)
+				self.log.debug("Validating RNA: %s", rnaSequence)
+				# Ensure string is in-frame first...
+				matches = re.match('^ATG((?:[CTAG]{3})+)$', rnaSequence)
+				if matches is None:
+						self.log.critical("Invalid CDR3: Frame shifted (%d)", len(rnaSequence)%3)
+						return None
+				else:
+						self.log.critical("NOT Frame shifted")
 				# Check for early stop codons
 				matches = re.match('^((?:[CTAG]{3})*)(TAA|TAG|TGA)((?:[CTAG]{3})+)$', rnaSequence)
 				if matches is not None:
-						self.log.info("Invalid CDR3: Stop codon found in sequence...")
+						self.log.critical("Invalid CDR3: Stop codon found in sequence...")
+						self.log.critical("%s", '.'.join(matches.groups()))
+						self.log.critical("%s", '_'.join([vSegmentRNA, dSegmentRNA, jSegmentRNA, cSegmentRNA]))
+						#exit(4)
 						return None
 
 				# Continue only if our CDR3 sequence is valid
 				if not self.validateCDR3Sequence(rnaSequence):
-						self.log.info("Invalid CDR3 sequence")
+						self.log.critical("Invalid CDR3: Amino acid sequence incorrect")
 						return None
 										
 				# Calculate the location of our DNA/RNA 5' and 3' UTR areas
@@ -1112,8 +1142,8 @@ class tcr:
 						sequenceTuple = self.config.recombinate(self.V2, self.D2, self.J2, self.C2)
 						if sequenceTuple is not None:
 								self.DNA2, self.RNA2 = sequenceTuple
-								self.log.info("randomize() complete")
-								break
+								self.log.info("randomize() complete Frame shifted")
+								return
 
 		# getCDR3Sequences - Return RNA sequences of the CDR3 regions
     # 
