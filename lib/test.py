@@ -221,7 +221,33 @@ trav20LVGeneSeq='atggagaaaatgttggagtgtgcattcatagtcttgtggcttcagcttggctggttgagtgga
 if vAlleleSeq[1] != trav20LVGeneSeq:
 		log.error("Unexpected V-region RNA (expected %s, got %s)", trav20LVGeneSeq, vAlleleSeq[1])
 		exit(-10)
-		
+
+
+vRegion = filter(lambda x:x['gene'] == 'TRAJ22' and
+								 x['region'] == 'J-REGION', my_configuration.receptorSegment)
+if len(vRegion) == 0:
+		log.error("Failed to identify J-REGION for TRAJ22")
+		exit(-10)
+elif len(vRegion) > 1:
+		log.error("Duplicate J-REGION locations for TRAJ22")
+		exit(-10)
+vRegionIndex = my_configuration.receptorSegment.index(vRegion[0])
+traj22AlleleSeq = my_configuration.getSegmentSequences((vRegionIndex, '01'))
+targetSeq='TTTCTTCTGGTTCTGCAAGGCAACTGACCTTTGGATCTGGGACACAATTGACTGTTTTACCTG'
+
+if traj22AlleleSeq[1] != targetSeq:
+		log.error("Unexpected J-region RNA (expected \n%s, got \n%s)", targetSeq, traj22AlleleSeq[1])
+		exit(-10)
+
+VJSeq = trav20LVGeneSeq + traj22AlleleSeq[1]
+VJCSeq = 'ATGGAGAAAATGTTGGAGTGTGCATTCATAGTCTTGTGGCTTCAGCTTGGCTGGTTGAGTGGAGAAGACCAGGTGACGCAGAGTCCCGAGGCCCTGAGACTCCAGGAGGGAGAGAGTAGCAGTCTCAACTGCAGTTACACAGTCAGCGGTTTAAGAGGGCTGTTCTGGTATAGGCAAGATCCTGGGAAAGGCCCTGAATTCCTCTTCACCCTGTATTCAGCTGGGGAAGAAAAGGAGAAAGAAAGGCTAAAAGCCACATTAACAAAGAAGGAAAGCTTTCTGCACATCACAGCCCCTAAACCTGAAGACTCAGCCACTTATCTCTGTGCTTAGTCGTTTCTTCTGGTTCTGCAAGGCAACTGACCTTTGGATCTGGGACACAATTGACTGTTTTACCTGTCTGTCTGCCTATTCACCGATTTTGATTCTCAAACAAATGTGTCACAAAGTAAGGATTCTGATGTGTATATCACAGACAAAACTGTGCTAGACATGAGGTCTATGGACTTCAAGAGCAACAGTGCTGTGGCCTGGAGCAACAAATCTGACTTTGCATGTGCAAACGCCTTCAACAACAGCATTATTCCAGAAGACACCTTCTTCCCCAGCCCAGAAAGTTCCTGTGATGTCAAGCTGGTCGAGAAAAGCTTTGAAACAGATACGAACCTAAACTTTCAAAACCTGTCAGTGATTGGGTTCCGAATCCTCCTCCTGAAAGTGGCCGGGTTTAATCTGCTCATGACGCTGCGGCTGTGGTCCAGCTGA'
+log.info("%s", VJSeq)
+prettySeq = []
+for i in range(0, len(VJSeq), 3):
+		prettySeq.append(VJSeq[0+i:3+i])
+log.info("%s", ','.join(prettySeq))
+
+
 
 vGene = filter(lambda x:x['gene'] == 'TRBV20-1' and
 								 x['region'] == 'L-V-GENE-UNIT', my_configuration.receptorSegment)
@@ -238,34 +264,29 @@ if extractedSeq != targetSeq:
 		log.error("Unexpected L-V-GENE region (expected %s, got %s)", targetSeq, extractedSeq)
 		exit(-10)
 
-vRegion = filter(lambda x:x['gene'] == 'TRBV20-1' and
-								 x['region'] == 'V-REGION', my_configuration.receptorSegment)
+vRegion = filter(lambda x:x['gene'] == 'TRBJ2-1' and
+								 x['region'] == 'J-REGION', my_configuration.receptorSegment)
 if len(vRegion) == 0:
-		log.error("Failed to identify V-REGION for TRBV20-1")
+		log.error("Failed to identify J-REGION for TRBJ2-1")
 		exit(-10)
 elif len(vRegion) > 1:
-		log.error("Duplicate V-REGION locations for TRBV20-1")
+		log.error("Duplicate J-REGION locations for TRBJ2-1")
 		exit(-10)
-vRegionIndex = my_configuration.receptorSegment.index(vRegion[0])
-vAlleleSeq = my_configuration.getSegmentSequences((vRegionIndex, '01'))
+jRegionIndex = my_configuration.receptorSegment.index(vRegion[0])
+vAlleleSeq = my_configuration.getSegmentSequences((jRegionIndex, '01'))
 targetSeq=['atgctgctgcttctgctgcttctggggccaggtataagcctccttctacctgggagcttggcaggctccgggcttggtgctgtcgtctctcaacatccgagctgggttatctgtaagagtggaacctctgtgaagatcgagtgccgttccctggactttcaggccacaactatgttttggtatcgtcagttcccgaaacagagtctcatgctgatggcaacttccaatgagggctccaaggccacatacgagcaaggcgtcgagaaggacaagtttctcatcaaccatgcaagcctgaccttgtccactctgacagtgaccagtgcccatcctgaagacagcagcttctacatctgcagtgctagaga'.upper(), 'ATGCTGCTGCTTCTGCTGCTTCTGGGGCCAGCAGGCTCCGGGCTTGGTGCTGTCGTCTCTCAACATCCGAGCTGGGTTATCTGTAAGAGTGGAACCTCTGTGAAGATCGAGTGCCGTTCCCTGGACTTTCAGGCCACAACTATGTTTTGGTATCGTCAGTTCCCGAAACAGAGTCTCATGCTGATGGCAACTTCCAATGAGGGCTCCAAGGCCACATACGAGCAAGGCGTCGAGAAGGACAAGTTTCTCATCAACCATGCAAGCCTGACCTTGTCCACTCTGACAGTGACCAGTGCCCATCCTGAAGACAGCAGCTTCTACATCTGCAGTGCTAGAGA']
 
-if targetSeq.index(vAlleleSeq[1]) == None:
-		log.error("Unexpected V-region RNA (expected \n%s, got \n%s)", targetSeq, vAlleleSeq[1])
+if not targetSeq.index(vAlleleSeq[1]):
+		log.error("Unexpected V-region RNA (expected \n%s, got \n%s)", targetSeq, jAlleleSeq[1])
 		exit(-10)
-		
-prettySeq = []
-for i in range(0, len(vAlleleSeq[1]), 3):
-		prettySeq.append(vAlleleSeq[1][0+i:3+i])
 
+seq = ##
+prettySeq = []
+for i in range(0, len(seq), 3):
+		prettySeq.append(seq[0+i:3+i])
 log.info("%s", ','.join(prettySeq))
 
-
-		
 quit()
-
-
-
 
 
 
