@@ -1,6 +1,9 @@
 TCR Synthetic Data Generator
 ============================
 
+Version: 1.0.1
+Date: 2018-4-8
+
 TODO: Better title for this program
 
 
