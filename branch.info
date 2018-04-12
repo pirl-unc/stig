@@ -1,0 +1,5 @@
+Feature branch to add support for:
+- Command line option to enforce uniqueness of generated CDR3s on one of two levels:
+  1. Tuple of (CDR3 nucleotides, V region, J region)
+  2. CDR3 nucleotides
+
