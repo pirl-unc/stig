@@ -1,0 +1,9 @@
+v1.0.0: 2017-11-30
+* Initial release
+	
+v1.0.1: 2018-4-8
+* Removed extra nucleotides in allele files
+	
+v1.0.2: 2018-4-19
+* Fixed issue with read lengths when reads fell into 3' UTR
+
