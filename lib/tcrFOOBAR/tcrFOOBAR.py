@@ -1410,20 +1410,22 @@ class tcrRepertoire:
 
 						chromosome, sequenceStart, strandStart, sequence, sequenceEnd, strandEnd = receptorCoordinates
 						
-						self.log.debug("Choosing between [-100, %d]", len(sequence))
+						self.log.debug("Choosing between [-100, %d]", len(sequence) + 100 - totalReadLength)
 						
 						outputSequence = ''
-						randomStart = random.choice(range(-100, len(sequence)))
+						randomStart = random.choice(range(-100, len(sequence) + 100 - totalReadLength ))
 						
 						_5UTRBases = 0
-						if randomStart < 0 and randomStart + totalReadLength < 0:
+						if   randomStart < 0 and abs(randomStart) > totalReadLength:
 								_5UTRBases = totalReadLength
 						elif randomStart < 0:
 								_5UTRBases = abs(randomStart)
 
 						_3UTRBases = 0
-						if randomStart > 0 and randomStart + totalReadLength > len(sequence):
+						if   randomStart >= 0 and (len(sequence) - randomStart) < totalReadLength:
 								_3UTRBases = totalReadLength - (len(sequence) - randomStart)
+						elif randomStart <  0 and (len(sequence) + abs(randomStart)) < totalReadLength:
+								_3UTRBases = totalReadLength - (len(sequence) + abs(randomStart))
 
 						self.log.debug("Starting read at position %d, 5p %db 3p %db", randomStart, _5UTRBases, _3UTRBases)
 
@@ -1448,8 +1450,12 @@ class tcrRepertoire:
 
 						if paired_end is False:
 								outputReads.append(outputSequence)
+								if len(outputSequence) != totalReadLength:
+										self.log.critical("Read length exception: Expected %d, got %d (read start: %d, sequence length: %d)", totalReadLength, len(outputSequence), randomStart, len(sequence))
 						else:
 								outputReads.append([outputSequence[0:readLength[0]], outputSequence[readLength[0] + readLength[1]:]])
+								if len(outputReads[-1][0]) != read1Length or len(outputReads[-1][0]) != read2Length:
+										self.log.critical("Read length exception: Expected (%d:%d), got (%d:%d) (read start: %d, sequence length: %d", read1Length, read2Length, len(outputReads[-1][0]), len(outputReads[-1][1]), randomStart, len(sequence))
 								
 				return outputReads
 
