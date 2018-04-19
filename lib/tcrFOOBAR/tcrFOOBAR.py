@@ -1410,10 +1410,10 @@ class tcrRepertoire:
 
 						chromosome, sequenceStart, strandStart, sequence, sequenceEnd, strandEnd = receptorCoordinates
 						
-						self.log.debug("Choosing between [-100, %d]", len(sequence))
+						self.log.debug("Choosing between [-100, %d]", len(sequence) + 100 - totalReadLength)
 						
 						outputSequence = ''
-						randomStart = random.choice(range(-100, len(sequence)))
+						randomStart = random.choice(range(-100, len(sequence) + 100 - totalReadLength ))
 						
 						_5UTRBases = 0
 						if randomStart < 0 and randomStart + totalReadLength < 0:
