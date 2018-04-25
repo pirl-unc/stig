@@ -473,7 +473,7 @@ TRDD1	14q11.2	forward	TRD		direct	TRDD1*01 F	-	D-REGION	-	-	TRDD1	NC_000014.9	22
 TRDD2	14q11.2	forward	TRD		direct	TRDD2*01 F	-	D-REGION	-	-	TRDD2	NC_000014.9	22439007..22439015	direct
 TRDD3	14q11.2	forward	TRD		direct	TRDD3*01 F	-	D-REGION	-	-	TRDD3	NC_000014.9	22449113..22449125	direct
 														
-# Coordinates listed in IMGT were wrong														
+# Coordinates listed in IMGT were off by one														
 TRGC2	7p14	reverse	TRG	128483..128812	direct	TRGC2*02 F	M15001	EX1	1..330	direct	TRGC2	NC_000007.14	38249244..38249573	opposite
 TRGC1	7p14	reverse	TRG	112377..112706	direct	TRGC1*01 F	M14996	EX1	41..370	direct	TRGC1	NC_000007.14	38265350..38265679	opposite
 														

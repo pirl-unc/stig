@@ -1,5 +1,5 @@
-TODO: Pick a better title for this program
-==========================================
+STIG: Synthetic TCR Informatics Generator
+=========================================
 
 Table of contents
 -----------------
@@ -17,40 +17,37 @@ BUG REPORTS
 ## 1. NAME
 
 
-TODO - Synthetic read generator for T-cell receptor data
+STIG - Synthetic TCR Informatics Generator
 
 ## 2. SYNOPSIS
 
 
-  ./lib/main.py [options] [allele fasta files]
+  ./lib/stig [options] [allele fasta files]
 
 ## 3. DESCRIPTION
 
-
-TODO
-
+STIG is a tool for creating artificial T-cell repertoires and producing simulated sequencing data from them.  Many characteristics of the repertoires and the sequencing output can be customized.  Reads can be generated in both RNA and DNA space.  Applications include evaluating and optimizing tools for performing analysis of T-cell receptors.
 
 
 ## 4. OPTIONS
 
 ```
-
-usage: main.py [-h] [--chr7-filename FILE] [--chr14-filename FILE]
-               [--tcell-data FILE] [--output BASENAME] [--repertoire-size N]
-               [--population-size N]
-               [--population-distribution {gaussian,chisquare}]
-               [--population-gaussian-parameters N | --population-chisquare-parameters k:cutoff]
-               [--read-type {paired,single}] [--sequence-type {dna,rna}]
-               [--sequence-count SEQ] [--read-length-mean READ_LENGTH_MEAN]
-               [--read-length-sd READ_LENGTH_SD] [--read-length-sd-cutoff N]
-               [--insert-length-mean INSERT_LENGTH_MEAN]
-               [--insert-length-sd INSERT_LENGTH_SD]
-               [--insert-length-sd-cutoff N]
-               [--degrade-logistic B:L:k:mid | --degrade-phred PHRED_STRING]
-               [--degrade-variability FLOAT] [--display-degradation]
-               [--receptor-ratio RATIO]
-               [--log-level {debug,info,warning,error,critical}]
-               [ALLELE_FILES [ALLELE_FILES ...]]
+usage: stig [-h] [--chr7-filename FILE] [--chr14-filename FILE]
+            [--tcell-data FILE] [--output BASENAME] [--load-population FILE]
+            [--repertoire-size N] [--population-size N]
+            [--population-distribution {gaussian,chisquare}]
+            [--population-gaussian-parameters N | --population-chisquare-parameters k:cutoff]
+            [--read-type {paired,single}] [--sequence-type {dna,rna}]
+            [--sequence-count N] [--read-length-mean READ_LENGTH_MEAN]
+            [--read-length-sd READ_LENGTH_SD] [--read-length-sd-cutoff N]
+            [--insert-length-mean INSERT_LENGTH_MEAN]
+            [--insert-length-sd INSERT_LENGTH_SD]
+            [--insert-length-sd-cutoff N]
+            [--degrade-logistic B:L:k:mid | --degrade-phred PHRED_STRING]
+            [--degrade-variability FLOAT] [--display-degradation]
+            [--receptor-ratio RATIO]
+            [--log-level {debug,info,warning,error,critical}]
+            [ALLELE_FILES [ALLELE_FILES ...]]
 
 Generate synthetic TCR read data
 
@@ -59,88 +56,68 @@ positional arguments:
                         fasta files
 
 optional arguments:
-  -h, --help
-			show this help message and exit
-			
-  --chr7-filename FILE
-			Filename of a FASTA formatted file with chromosome 7
+  -h, --help            show this help message and exit
+  --chr7-filename FILE  Filename of a FASTA formatted file with chromosome 7
                         reference data
-
   --chr14-filename FILE
                         Filename of a FASTA formatted file with chromosome 7
                         reference data
-
-  --tcell-data FILE
-			Filename of a tab-separated file with T cell receptor
+  --tcell-data FILE     Filename of a tab-separated file with T cell receptor
                         segments and reference gene coordinates
-
-  --output BASENAME
-			Name of output fastq file. This should be a basename,
-                        e.g. '--output=foo' will write to 'foo.fastq',
-                        'foo.statistics.csv', etc. Default is 'tcr_synth'
-
-  --repertoire-size N
-			Size of the TCR repertoire (i.e. the number of unique
+  --output BASENAME     Basename for output files, e.g. '--output=foo' will
+                        write to 'foo.fastq', 'foo.statistics.csv', etc.
+                        Default is 'stig.out'
+  --load-population FILE
+                        Load TCR population and repertoire data from FILE,
+                        rather than generating from scratch
+  --repertoire-size N   Size of the TCR repertoire (i.e. the number of unique
                         TCRs that are generated). Default is 10
-
-  --population-size N
-			The number of T-cells in the repertoire (e.g. if
+  --population-size N   The number of T-cells in the repertoire (e.g. if
                         repertoire-sze=5 and population-size=15, then there
                         are 3 clones of each unique TCR on average). Default
                         is 100
-
   --population-distribution {gaussian,chisquare}
                         Population distribution function. This defines the
                         function used to distribute the population among the
                         repertoire. Default is the (normalized) gaussian. See
                         --population-gaussian-parameters, --population-
                         chisquare-parameters
-			
   --population-gaussian-parameters N
                         Parameter for the normalized gaussian distribution.
                         The number of standard deviations to include in our
                         population distribution. Decimal value. Default is 3
-			
   --population-chisquare-parameters k:cutoff
                         Parameters for the chi-square distribution. Takes an
                         argument formatted as 'k:cutoff', where k - degrees of
                         freedom. Default is 3. cutoff - X-axis maximum.
                         Default is 8
-			
   --read-type {paired,single}
-                        Generate either single or paired-end reads
-			
+                        Generate either single or paired-end reads. Default is
+                        single
   --sequence-type {dna,rna}
-                        Generate sequences from simulated DNA or RNA
-			
-  --sequence-count SEQ  Number of sequences (reads) to generate. Default is
+                        Generate sequences from simulated DNA or RNA. Default
+                        is DNA
+  --sequence-count N    Number of sequences (reads) to generate. Default is
                         1000
-			
   --read-length-mean READ_LENGTH_MEAN
                         The average length of reads in nucleotides. Default is
                         48
-			
   --read-length-sd READ_LENGTH_SD
                         The SD of read length variation in nucleotides. Set to
                         zero for fixed-length reads. Default is 4
-			
   --read-length-sd-cutoff N
                         Read lengths are restricted to less than N standard
                         deviations from the mean. Default is 4
-			
   --insert-length-mean INSERT_LENGTH_MEAN
                         The average length of the insert for paired end reads.
                         Default is 48
-			
   --insert-length-sd INSERT_LENGTH_SD
                         The standard deviation of insert length variation in
                         nucleotides. Set to zero for fixed-length inserts.
                         Default is 4
-			
   --insert-length-sd-cutoff N
                         Insert lengths are restricted to less than N standard
                         dviations from the mean. Default is 4
-			
   --degrade-logistic B:L:k:mid
                         Simulate non-optimal quality using the logstic
                         (sigmoid) function. Takes an argument formatted as
@@ -150,7 +127,6 @@ optional arguments:
                         is equal to 1/2 of L. Default is off. This option is
                         mutually exclusive to --degrade-phred. See: --display-
                         degradation, --degrade-variability
-			
   --degrade-phred PHRED_STRING
                         Simulate non-optimal quality using a Phred+33 string
                         to specify quality on a per-nucleotide basis. If a
@@ -158,7 +134,6 @@ optional arguments:
                         then the last character in the phred string is used.
                         Default is off. This option is mutually exclusive to
                         --degrade-logistic. See: --degrade-variability
-			
   --degrade-variability FLOAT
                         Applies a relative variability in the per-nucleotide
                         error applied by the --degrade option. If a given base
@@ -166,7 +141,6 @@ optional arguments:
                         degrade-variability of 0.5 (50%) would result in an
                         error rate in the range of 0.1 +/- 0.1 * 0.5. Default
                         is 0
-
   --display-degradation
                         Display the error rate per base pair for a given
                         B:L:k:mid value and exit. The number of positions
@@ -175,14 +149,11 @@ optional arguments:
                         parameters to be passed to the --degrade option. Note
                         that no reads or repertoire will be generated when
                         this option is given
-
   --receptor-ratio RATIO
                         Ratio of alpha/beta vs gamma/delta sequences. Default
                         is 0.9 (9 alpha/beta per 1 gamma/delta TCR)
-
   --log-level {debug,info,warning,error,critical}
                         Logging level. Default is warning and above
-
 ```
 
 ## 4.1 Options overview
@@ -198,6 +169,7 @@ The majority of options fall into a few broad categories:
 
 ### 5.1 Quick usage
 
+STIG includes 
 
 
 ## 6. SEE ALSO
@@ -240,3 +212,4 @@ N.b. that the versions of these files were hand-curated to exclude various logic
 
 1. Loading a repertoire/population will attempt to re-access the chromosome files it was originally saved with.  There currently is not a way to change/update this, and modifying the chromosome files may result in unintended behavior when generating reads with a previously-saved repertoire
 2. Loading a repertoire/population will contain the allele data from when the repertoire was generated.  As the alleles are used to generate the repertoires, this is intended behavior.
+3. Generated repertoires may have duplicated T-cell receptors between them (i.e. by random chance, the same V-gene, J-gene and CDR3 sequence may be formed in more than one clonal population).  Internal testing reveals this is the case in <5% of clones generated.

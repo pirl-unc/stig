@@ -7,3 +7,7 @@ v1.0.1: 2018-4-8
 v1.0.2: 2018-4-19
 * Fixed issue with read lengths when reads fell into 3' UTR
 
+v1.0.3: 2018-4-23
+* Updated filenames to conform to naming scheme
+* License notice added
+* Manual and README with multiple additions and corrections
