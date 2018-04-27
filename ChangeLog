@@ -11,3 +11,8 @@ v1.0.3: 2018-4-23
 * Updated filenames to conform to naming scheme
 * License notice added
 * Manual and README with multiple additions and corrections
+
+v1.1.0: 2018-4-27
+* Added more detailed read information to fastq comments
+* Improved code documentation
+* Statistics file has clone ID explicitly listed
