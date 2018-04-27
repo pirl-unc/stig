@@ -1265,8 +1265,9 @@ class tcrRepertoire:
 		#                   chisquare: Chi Square distribution.  Takes cs_k and
 		#                   cs_cutoff arguments to describe k value and the largest
 		#                   x-axis value to include in the distribution, respectively
-		# 
-				
+		#
+		# Returns: Nothing
+		#		
 		def populate( self, population_size, distribution, g_cutoff=3, cs_k=2, cs_cutoff=8 ):
 				self.log.info("populate() called...")
 				self.log.debug("Arguments: %s", (population_size, distribution, g_cutoff, cs_k, cs_cutoff))
@@ -1329,9 +1330,55 @@ class tcrRepertoire:
 
 
 				
-		# Notes:
-		# For fixed-length reads or inner mate distances, set the standard deviation to zero and the mean to whatever you'd like
-		
+		# simulateRead - Generate reads from a repertoire
+		#
+		# Arguments:
+		# count        - Integer. The total # of reads requested
+		# space        - String. The type of sequencing read to generate, 'dna' or
+		#                'rna'
+		#
+		# Optional arguments:
+		# paired_end   - Boolean.  True for paired end reads, False for single.
+		#                Default is False.
+		# distribution - String.  The distribution of the read and inner mate
+		#                lengths.  Only option supported currently is 'gaussian'
+		# read_length_mean      - Integer.  The mean read length to generate.
+		# read_length_sd        - Integer. The standard deviation of the
+		#                         distribution of lengths of generated reads.
+		#                         Setting this to zero will produce fix-length
+		#                         reads of read_length_mean length.  Default
+		#                         is 4.
+		# read_length_sd_cutoff - Integer.  The number of standard deviations
+		#                         from the mean read length to include in generated
+		#                         reads.
+		# inner_mate_length_mean      - Integer.  The mean length of the inner mate
+		#                               portion of paired end reads.  Used only
+		#                               when generating paired end reads.  Setting
+		#                               this to zero will produced fix-length
+		#                               inner mate portions at the mean. Default
+		#                               is 100 nucleotides.
+		# inner_mate_length_sd        - Integer.  The standard deviation of the
+		#                               distribution of the length of the inner
+		#                               mate portion of generated reads.  Default
+		#                               is 8.
+		#
+		# inner_mate_length_sd_cutoff - Integer.  The number of standard
+		#                               deviations from the mean inner mate length
+		#                               to include in generated reads.
+		# 
+		# Returns:
+		#
+		# A single 2-tuple (reads, comments), where:
+		#
+		# reads - If single-end reads, this is an array of strings.  If paired-end
+		#         reads, this is an array of 2-tuples of (read1, read2)
+		#         with types (string, string).
+		#
+		# comments - An array of strings.  These are descriptive strings that
+		#            provide information regarding the reads in the 'reads'
+		#            array, where comments[n] describes reads[n].
+		#
+		#
 		def simulateRead( self, count, space, distribution='gaussian', read_length_mean=25, read_length_sd=4, read_length_sd_cutoff=4, paired_end=False, inner_mate_length_mean=100, inner_mate_length_sd=8, inner_mate_length_sd_cutoff=4):
 				self.log.debug("simulateRead() called...")
 
@@ -1353,7 +1400,8 @@ class tcrRepertoire:
 										self.log.debug("Individual is instance of cell %d in repertoire", j)
 										readIndividual = j
 										break
-
+						outputComment='@STIG:readnum=%d:clone=%d' % (i, j)
+								
 						# Calculate our read length for this particular read
 						readLength = None
 						if distribution == 'gaussian':
@@ -1392,28 +1440,32 @@ class tcrRepertoire:
 										
 						self.log.debug("Read length for this read will be: %s", readLength)
 
-
 						# Pick a location within this individual's DNA and generate the read
 						totalReadLength = readLength if isinstance(readLength, int) else readLength[0] + readLength[1] + readLength[2]
 
+						# Pick a chain to read from (alpha / beta or gamma / delta)
 						receptorCoordinates = None
 						if random.random() < 0.5:
 								if space == 'dna':
 										receptorCoordinates = self.repertoire[readIndividual].DNA1
 								elif space == 'rna':
 										receptorCoordinates = self.repertoire[readIndividual].RNA1
+								outputComment = (outputComment + ":chain=%s" % self.repertoire[readIndividual].type1)
 						else:
 								if space == 'dna':
 										receptorCoordinates = self.repertoire[readIndividual].DNA2
 								elif space == 'rna':
 										receptorCoordinates = self.repertoire[readIndividual].RNA2
+								outputComment = (outputComment + ":chain=%s" % self.repertoire[readIndividual].type2)
 
 						chromosome, sequenceStart, strandStart, sequence, sequenceEnd, strandEnd = receptorCoordinates
-						
+
+						# Determine a location within that chain's sequence and pull the read
 						self.log.debug("Choosing between [-100, %d]", len(sequence) + 100 - totalReadLength)
 						
 						outputSequence = ''
 						randomStart = random.choice(range(-100, len(sequence) + 100 - totalReadLength ))
+						outputComment = (outputComment + ":relpos=%d" % randomStart)
 						
 						_5UTRBases = 0
 						if   randomStart < 0 and abs(randomStart) > totalReadLength:
@@ -1449,16 +1501,18 @@ class tcrRepertoire:
 								outputSequence += self.config.readChromosome(chromosome, sequenceEnd, sequenceEnd + _3UTRBases - 1, strandEnd)
 
 						if paired_end is False:
-								outputReads.append(outputSequence)
+								outputReads.append((outputSequence, outputComment))
 								if len(outputSequence) != totalReadLength:
 										self.log.critical("Read length exception: Expected %d, got %d (read start: %d, sequence length: %d)", totalReadLength, len(outputSequence), randomStart, len(sequence))
 						else:
-								outputReads.append([outputSequence[0:readLength[0]], outputSequence[readLength[0] + readLength[1]:]])
+								outputReads.append(((outputSequence[0:readLength[0]], outputSequence[readLength[0] + readLength[1]:]), outputComment))
 								if len(outputReads[-1][0]) != read1Length or len(outputReads[-1][0]) != read2Length:
 										self.log.critical("Read length exception: Expected (%d:%d), got (%d:%d) (read start: %d, sequence length: %d", read1Length, read2Length, len(outputReads[-1][0]), len(outputReads[-1][1]), randomStart, len(sequence))
 								
-				return outputReads
+				return outputReads # end simulateRead()
 
+
+		
 		# Return statistics about this repertoire, suitable for saving to a file
     #
     # Arguments: none
@@ -1474,7 +1528,7 @@ class tcrRepertoire:
 		def getStatistics(self, addHeader = False):
 				retval = []
 				if addHeader == True:
-						retval.append(["CELL_COUNT,VALLELE_1, JALLELE_1, CDR3_1, RNA_1, DNA_1, VALLELE_2, J_ALLELE_2, CDR3_2, RNA_2, DNA_2"])
+						retval.append(["CLONE,CELL_COUNT,VALLELE_1, JALLELE_1, CDR3_1, RNA_1, DNA_1, VALLELE_2, J_ALLELE_2, CDR3_2, RNA_2, DNA_2"])
 
 				for i in range(0, len(self.repertoire)):
 						CDR3_1, CDR3_2 = self.repertoire[i].getCDR3Sequences()
@@ -1484,7 +1538,7 @@ class tcrRepertoire:
 						j1Allele = "%s*%s" % (self.config.receptorSegment[self.repertoire[i].J1[0]]['gene'], self.repertoire[i].J1[1])
 						j2Allele = "%s*%s" % (self.config.receptorSegment[self.repertoire[i].J2[0]]['gene'], self.repertoire[i].J2[1])
 				
-						stats = [ self.population[i],
+						stats = [ i, self.population[i],
 											v1Allele, j1Allele, CDR3_1, self.repertoire[i].RNA1[3], self.repertoire[i].DNA1[3],
 											v2Allele, j2Allele, CDR3_2, self.repertoire[i].RNA2[3], self.repertoire[i].DNA2[3] ]
 											
