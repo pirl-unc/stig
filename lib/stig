@@ -206,7 +206,7 @@ else:
 						k, cutoff = matches.groups()
 						my_repertoire.populate(args.population_size, 'chisquare', cs_k=float(k), cs_cutoff=float(cutoff))
 				else:
-						raise ValueError("Invalid chi-square parameters: %s" %args.population_chisquare_parameters)
+						raise ValueError("Invalid chi-square parameters: %s" % args.population_chisquare_parameters)
 				
 
 # Obtain our simulated reads
@@ -225,9 +225,10 @@ if args.read_type == 'single':
 		outputFilename = args.output + '.fastq'
 		with open(outputFilename, 'w') as fp:
 				i = 0
-				for read in outputSequences:
+				for readTuple in outputSequences:
+						(read, comment) = readTuple
 						qualStr = 'I'*len(read)
-						fp.write("@TCR_SIMULATED_%d\n" %(i))
+						fp.write("%s\n" % (comment))
 						fp.write("%s\n" % (read))
 						fp.write("+\n")
 						fp.write("%s\n" % qualStr)
@@ -238,17 +239,18 @@ elif args.read_type == 'paired':
 		with open(output1Filename, 'w') as output1:
 				with open(output2Filename, 'w') as output2:
 						i = 0
-						for readPair in outputSequences:
+						for readPairTuple in outputSequences:
+								(readPair, comment) = readPairTuple
 								read1, read2 = readPair
 								qualStr1 = 'I'*len(read1)
 								qualStr2 = 'I'*len(read2)
 
-								output1.write("@TCR_SIMULATED_%d\n" %(i))
+								output1.write("%s\n" % (comment))
 								output1.write("%s\n" % (read1))
 								output1.write("+\n")
 								output1.write("%s\n" % qualStr1)
 
-								output2.write("@TCR_SIMULATED_%d\n" %(i))
+								output2.write("%s\n" % (comment))
 								output2.write("%s\n" % (read2))
 								output2.write("+\n")
 								output2.write("%s\n" % qualStr2)
