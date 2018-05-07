@@ -49,10 +49,10 @@ all:
 	@echo "devel - Development workflow";
 
 work:
-	./lib/main.py $(TCR_OPTS)
+	./lib/stig $(TCR_OPTS)
 
 devel:
-	./lib/main.py $(DEVEL_OPTS)
+	./lib/stig $(DEVEL_OPTS)
 
 
 
