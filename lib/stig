@@ -56,6 +56,12 @@ parser.add_argument("--load-population", metavar='FILE', type=str,
 
 parser.add_argument('--repertoire-size', metavar='N', type=int, default=10,
 										help='Size of the TCR repertoire (i.e. the number of unique TCRs that are generated).  Default is 10')
+parser.add_argument('--repertoire-unique', action = 'store_true',
+										help = "Force each TCR to be unique on the RNA level.  Default is to allow collisions")
+parser.add_argument('--repertoire-chain-unique', action = 'store_true',
+										help = "Force each TCR chain (e.g. alpha) to be unique on the RNA level.  Implies unique TCRs as per --repertoire-unique.  Default is to allow collisons")
+parser.add_argument('--repertoire-cdr3-unique', action = 'store_true',
+										help = "Force each CDR3 of each chain to be unique on the nucleotide level.  Implies unique TCRs as per --repertoire-unique and unique chains as per --repertoire-chain-unique.  Note this may cause performance issues as repertoire size increases.  Default is to allow collisons")
 parser.add_argument('--population-size', metavar='N', type=int, default=100,
 										help='The number of T-cells in the repertoire (e.g. if repertoire-sze=5 and population-size=15, then there are 3 clones of each unique TCR on average).  Default is 100')
 parser.add_argument('--population-distribution', choices = ['gaussian', 'chisquare'], default='gaussian',
@@ -194,7 +200,12 @@ if args.load_population is not None:
 else:
 		log.info("Generating new repertoire")
 
-		my_repertoire = stigtools.tcrRepertoire(my_configuration, args.repertoire_size, AB_frequency=args.receptor_ratio, log=log.getChild('tcrRepertoire'))
+		my_repertoire = stigtools.tcrRepertoire(my_configuration, args.repertoire_size,
+																						AB_frequency=args.receptor_ratio,
+																						uniqueTCR = args.repertoire_unique,
+																						uniqueChain = args.repertoire_chain_unique,
+																						uniqueCDR3 = args.repertoire_cdr3_unique,
+																						log=log.getChild('tcrRepertoire'))
 
 		# Populate the repertiore
 		if args.population_distribution == 'gaussian':

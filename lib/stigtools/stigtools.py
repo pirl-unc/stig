@@ -1159,20 +1159,60 @@ class tcr:
 						
 class tcrRepertoire:
 
-		def __init__( self, config, size, log=None, AB_frequency = 0.9 ):
+		def __init__( self, config, size, log=None, AB_frequency = 0.9, uniqueCDR3 = False, uniqueChain = False, uniqueTCR = False ):
 				if( isinstance(config, tcrConfig) ):
 						self.config = config
 				else:
 						raise ValueError("config object must be a tcrConfig")
 
 				self.setLog(log)
-				
-				self.log.debug("Initializing repertoire of %d receptors", size)
+
+				self.log.info("tcrRepertoire()::__init__ called with size %d, AB ratio %f, unique chains %s, unique CDR3 %s", size, AB_frequency, uniqueChain, uniqueTCR)
 			 	self.AB_frequency = AB_frequency
 				self.repertoire = [None] * size
 				for i in range(0, size):
+						self.log.debug("Generating repertoire bucket %d of %d", i + 1, size)
 						self.repertoire[i] = tcr(self.AB_frequency, self.config, log=self.log.getChild('tcr'))
-						self.repertoire[i].randomize()
+
+						if uniqueCDR3 == True: # Ensure unique CDR3
+								unique = False
+								while unique == False:
+										self.repertoire[i].randomize()
+										for j in range(0, i):
+												if ( self.config.getCDR3Sequence(self.repertoire[i].RNA1[3]) == self.config.getCDR3Sequence(self.repertoire[j].RNA1[3]) or
+														 self.config.getCDR3Sequence(self.repertoire[i].RNA2[3]) == self.config.getCDR3Sequence(self.repertoire[j].RNA2[3]) ) :
+														self.log.debug("Duplicate CDR3 at position %d", j)
+														break
+										else:
+												unique = True
+												
+						elif uniqueChain == True: # Ensure unique chains
+								unique = False
+								while unique == False:
+										self.repertoire[i].randomize()
+										for j in range(0, i):
+												if ( self.repertoire[i].RNA1 == self.repertoire[j].RNA1 or
+														 self.repertoire[i].RNA2 == self.repertoire[j].RNA2 ) :														
+														self.log.debug("Duplicate chain at position %d", j)
+														break
+										else:
+												unique = True
+
+						elif uniqueTCR == True: # Ensure unique TCR
+								unique = False
+								while unique == False:
+										self.repertoire[i].randomize()
+										for j in range(0, i):
+												if ( self.repertoire[i].RNA1 == self.repertoire[j].RNA1 and
+														 self.repertoire[i].RNA2 == self.repertoire[j].RNA2 ) :
+														self.log.debug("Duplicate CDR3 at position %d", j)
+														break
+										else:
+												unique = True
+						else: # No uniqueness constraints
+								self.repertoire[i].randomize()
+								
+						self.log.debug("Finished generating repertoire bucket %d of %d", i + 1, size)
 				self.population = [0] * size
 				self.population_size = 0
 				self.distribution_options = ('flat', 'equal', 'gaussian', 'chisquare')
