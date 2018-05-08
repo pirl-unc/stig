@@ -1,0 +1,24 @@
+This is the checklist for releases.  It is intended to live in the develop branch, and is not for inclusion into final releases
+
+PRIOR TO release-* BRANCH:
+[] - Hotfix/feature related code and documentation changes, NOT including version number bumps
+
+RELEASE BRANCH:
+[] - git checkout -b release-x.y.z develop
+
+Bump Release Numbers:
+[] - ChangeLog updated with version number, release date, summary of changes
+[] - doc/manual.md updated with version number
+
+MERGE RELEASE TO develop:
+[] - git checkout develop
+[] - git merge --no-ff release-x.y.z
+
+REMOVALS AND master MERGE:
+[] - git checkout release-x.y.z
+[] - branch.info deleted
+[] - Release.checklist deleted
+[] - git commit changes
+[] - git checkout master
+[] - git merge --no-ff release-x.y.z
+[] - git branch -d release-x.y.z
