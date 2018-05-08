@@ -627,21 +627,20 @@ class tcrConfig:
 				# Ensure string is in-frame first...
 				matches = re.match('^ATG((?:[CTAG]{3})+)$', rnaSequence)
 				if matches is None:
-						self.log.critical("Invalid CDR3: Frame shifted (%d)", len(rnaSequence)%3)
+						self.log.info("Invalid CDR3: Frame shifted (%d)", len(rnaSequence)%3)
 						return None
-				else:
-						self.log.critical("NOT Frame shifted")
+				
 				# Check for early stop codons
 				matches = re.match('^((?:[CTAG]{3})*)(TAA|TAG|TGA)((?:[CTAG]{3})+)$', rnaSequence)
 				if matches is not None:
-						self.log.critical("Invalid CDR3: Stop codon found in sequence...")
-						self.log.critical("%s", '.'.join(matches.groups()))
-						self.log.critical("%s", '_'.join([vSegmentRNA, dSegmentRNA, jSegmentRNA, cSegmentRNA]))
+						self.log.info("Invalid CDR3: Stop codon found in sequence...")
+						self.log.debug("%s", '.'.join(matches.groups()))
+						self.log.debug("%s", '_'.join([vSegmentRNA, dSegmentRNA, jSegmentRNA, cSegmentRNA]))
 						return None
 
 				# Continue only if our CDR3 sequence is valid
 				if not self.validateCDR3Sequence(rnaSequence):
-						self.log.critical("Invalid CDR3: Amino acid sequence incorrect")
+						self.log.info("Invalid CDR3: Amino acid sequence incorrect")
 						return None
 										
 				# Calculate the location of our DNA/RNA 5' and 3' UTR areas
