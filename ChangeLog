@@ -16,3 +16,7 @@ v1.1.0: 2018-4-27
 * Added more detailed read information to fastq comments
 * Improved code documentation
 * Statistics file has clone ID explicitly listed
+
+v1.1.1: 2018-5-08
+* Adjusted logging levels of debugging text to 'debug' as appropriate
+* Updated Makefile

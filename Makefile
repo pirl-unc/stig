@@ -61,8 +61,8 @@ test: test_help test_display_degradation
 	./lib/test.py $(TEST_OPTS)
 
 test_help:
-	./lib/main.py --help
+	./lib/stig --help
 
 test_display_degradation:
-	./lib/main.py --degrade-phred='555555555555' --degrade-variability=0.5 --display-degradation
+	./lib/stig --degrade-phred='555555555555' --degrade-variability=0.5 --display-degradation
 
