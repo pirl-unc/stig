@@ -6,6 +6,7 @@ PRIOR TO release-* BRANCH:
 
 CREATE RELEASE BRANCH:
 [] - git checkout -b release-x.y.z develop
+[] - Apply any hotfixes, review documentation updates, and fix other issues here.  No new features.
 
 BUMP RELEASE NUMBERS:
 [] - ChangeLog updated with version number, release date, summary of changes
