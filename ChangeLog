@@ -20,3 +20,7 @@ v1.1.0: 2018-4-27
 v1.1.1: 2018-5-08
 * Adjusted logging levels of debugging text to 'debug' as appropriate
 * Updated Makefile
+
+v.1.2.0: 2018-5-08
+* Added support for amplicon sequencing and supporting documentation
+* Fixed issue where empty files created with --sequence-count=0
