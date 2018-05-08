@@ -34,15 +34,17 @@ STIG is a tool for creating artificial T-cell repertoires and producing simulate
 ```
 usage: stig [-h] [--chr7-filename FILE] [--chr14-filename FILE]
             [--tcell-data FILE] [--output BASENAME] [--load-population FILE]
-            [--repertoire-size N] [--population-size N]
+            [--repertoire-size N] [--repertoire-unique]
+            [--repertoire-chain-unique] [--repertoire-cdr3-unique]
+            [--population-size N]
             [--population-distribution {gaussian,chisquare}]
             [--population-gaussian-parameters N | --population-chisquare-parameters k:cutoff]
-            [--read-type {paired,single}] [--sequence-type {dna,rna}]
+            [--read-type {paired,single,amplicon}] [--sequence-type {dna,rna}]
             [--sequence-count N] [--read-length-mean READ_LENGTH_MEAN]
             [--read-length-sd READ_LENGTH_SD] [--read-length-sd-cutoff N]
             [--insert-length-mean INSERT_LENGTH_MEAN]
             [--insert-length-sd INSERT_LENGTH_SD]
-            [--insert-length-sd-cutoff N]
+            [--insert-length-sd-cutoff N] [--amplicon-probe STR]
             [--degrade-logistic B:L:k:mid | --degrade-phred PHRED_STRING]
             [--degrade-variability FLOAT] [--display-degradation]
             [--receptor-ratio RATIO]
@@ -72,6 +74,19 @@ optional arguments:
                         rather than generating from scratch
   --repertoire-size N   Size of the TCR repertoire (i.e. the number of unique
                         TCRs that are generated). Default is 10
+  --repertoire-unique   Force each TCR to be unique on the RNA level. Default
+                        is to allow collisions
+  --repertoire-chain-unique
+                        Force each TCR chain (e.g. alpha) to be unique on the
+                        RNA level. Implies unique TCRs as per --repertoire-
+                        unique. Default is to allow collisons
+  --repertoire-cdr3-unique
+                        Force each CDR3 of each chain to be unique on the
+                        nucleotide level. Implies unique TCRs as per
+                        --repertoire-unique and unique chains as per
+                        --repertoire-chain-unique. Note this may cause
+                        performance issues as repertoire size increases.
+                        Default is to allow collisons
   --population-size N   The number of T-cells in the repertoire (e.g. if
                         repertoire-sze=5 and population-size=15, then there
                         are 3 clones of each unique TCR on average). Default
@@ -91,9 +106,9 @@ optional arguments:
                         argument formatted as 'k:cutoff', where k - degrees of
                         freedom. Default is 3. cutoff - X-axis maximum.
                         Default is 8
-  --read-type {paired,single}
-                        Generate either single or paired-end reads. Default is
-                        single
+  --read-type {paired,single,amplicon}
+                        Generate either single, paired-end, or amplicon reads.
+                        Default is single
   --sequence-type {dna,rna}
                         Generate sequences from simulated DNA or RNA. Default
                         is DNA
@@ -118,6 +133,16 @@ optional arguments:
   --insert-length-sd-cutoff N
                         Insert lengths are restricted to less than N standard
                         dviations from the mean. Default is 4
+  --amplicon-probe STR  Anchoring/priming sequence for generating amplicon
+                        reads. This should align with some RNA or DNA
+                        sequence, either sense or anti-sense. String will be
+                        interpreted as 5'-> 3'. Reads will be generated 5' ->
+                        3' starting with the priming sequence. Read 1 will
+                        have length given by --read-length-mean, --read-
+                        length-sd, and --read-length-sd-cutoff parameters.
+                        Read 2 will be complementary to read 1 and of an
+                        identical length. The default is an antisense 28-mer
+                        that anchors in EX1 of the beta chain C-region
   --degrade-logistic B:L:k:mid
                         Simulate non-optimal quality using the logstic
                         (sigmoid) function. Takes an argument formatted as
@@ -154,6 +179,7 @@ optional arguments:
                         is 0.9 (9 alpha/beta per 1 gamma/delta TCR)
   --log-level {debug,info,warning,error,critical}
                         Logging level. Default is warning and above
+
 ```
 
 ## 4.1 Options overview
@@ -169,7 +195,70 @@ The majority of options fall into a few broad categories:
 
 ### 5.1 Quick usage
 
-STIG includes 
+
+
+### 5.2 Amplicon data
+
+Amplicon sequencing uses a "priming" string to anchor reads near an area of interest, thus enriching the read depth at that location (versus standard single or pair-end sequencing).  This technique is commonly used in T-cell repertoire analysis to target the V/D/J recombination portion.
+
+Amplicon probes are always given in a 5' --> 3' direction.  STIG will generate reads in the 3' direction from the amplicon probe, and supports reverse-strand matching.  The read length for amplicon sequencing can be specified by the --read-length parameters -- although note that in practice, most amplicon reads will be long enough to cover the entire mRNA from the probe location into the UTR.  In STIG's amplicon sequencing, a second "paired" read is generated which is simply the complement of the original strand.
+
+#### 5.2.1 Forward strand example 
+
+Let us say this is our forward strand (either DNA or RNA, the choice is not relevant for this example):
+
+```
+5' <--- AAAAAAAAAAAATTGTCCCCCCCCCCCCATAA ---> 3' 
+```
+
+If we call STIG with `--amplicon-probe=TTGT`, then this will "anchor" at the expected area and generate a read in the 3' direction (to the specified read-length).
+
+```
+5' <--- AAAAAAAAAAAATTGTCCCCCCCCCCCCATAA ---> 3' 
+Primary read:       TTGTCCCCCCCCCCCCATAA...
+Probe               ^^^^
+```
+Do not forget that we get a reverse complement read as well:
+
+```
+ Paired read:    ...TTATGGGGGGGGGGGGACAA
+ Probe                              ^^^^
+
+```
+(n.b. STIG's output is always 5' --> 3', which is why the above string is reversed.)
+
+#### 5.2.2 Reverse strand example
+
+The C-region is a nice "constant" area to anchor probes in, but if the amplicon sequencing proceeds in a 3' direction this doesn't help capture the CDR3 region.  The solution is to use a probe which matches the reverse strand, so that reads capture the V, D, J portions before the C-region probe.
+
+Our DNA strand again, now with the complementary strand given:
+
+```
+5' <--- AAAAAAAAAAAATTGTCCCCCCCCCCCCATAA ---> 3'
+3' <--- TTTTTTTTTTTTAACAGGGGGGGGGGGGTATT ---> 5'
+```
+
+If we call STIG with `--amplicon-probe=TTAT`, then this will anchor on the reverse strand.  The read will proceed in a 3' direction on the reverse strand, which means the reads come from the 5' direction on the forward strand:
+
+```
+5' <--- AAAAAAAAAAAATTGTCCCCCCCCCCCCATAA ---> 3'
+3' <--- TTTTTTTTTTTTAACAGGGGGGGGGGGGTATT ---> 5'
+Primary read: ...AAATTGTCCCCCCCCCCCCATAA
+Probe                               ^^^^
+
+Paired read:    TTATGGGGGGGGGGGGACAATTT...
+Probe           ^^^^
+```
+
+(Again, the paired read is given 5' --> 3' )
+
+#### 5.2.3 Amplicon probes
+
+The default value for --amplicon-probe option is a 27-mer that anchors on the reverse strand of EX1 of the C-region on beta chains: `GATCTCTGCTTCTGATGGCTCAAACAC`
+
+Here is a slightly longer probe that anchors on the reverst strand of EX1 of the C-region on alpha chains: `AGAATCCTTACTTTGTGACACATTTGTTTGAGA`
+
+These values have only undergone limited testing in STIG, and may not function as intended in any wet-lab/in-vitro setting.
 
 
 ## 6. SEE ALSO
@@ -212,4 +301,3 @@ N.b. that the versions of these files were hand-curated to exclude various logic
 
 1. Loading a repertoire/population will attempt to re-access the chromosome files it was originally saved with.  There currently is not a way to change/update this, and modifying the chromosome files may result in unintended behavior when generating reads with a previously-saved repertoire
 2. Loading a repertoire/population will contain the allele data from when the repertoire was generated.  As the alleles are used to generate the repertoires, this is intended behavior.
-3. Generated repertoires may have duplicated T-cell receptors between them (i.e. by random chance, the same V-gene, J-gene and CDR3 sequence may be formed in more than one clonal population).  Internal testing reveals this is the case in <5% of clones generated.

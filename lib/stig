@@ -73,8 +73,8 @@ parserGroup1.add_argument('--population-gaussian-parameters', metavar='N', type=
 parserGroup1.add_argument('--population-chisquare-parameters', metavar='k:cutoff', default='2:8',
 													help='Parameters for the chi-square distribution.  Takes an argument formatted as \'k:cutoff\', where k - degrees of freedom.  Default is 3. cutoff - X-axis maximum.  Default is 8')
 
-parser.add_argument('--read-type', choices = ['paired', 'single'], default = 'single',
-										help='Generate either single or paired-end reads.  Default is single')
+parser.add_argument('--read-type', choices = ['paired', 'single', 'amplicon'], default = 'single',
+										help='Generate either single, paired-end, or amplicon reads.  Default is single')
 parser.add_argument('--sequence-type', choices = ['dna', 'rna'], default = 'dna',
 										help='Generate sequences from simulated DNA or RNA. Default is DNA')
 parser.add_argument("--sequence-count", metavar="N", type=int, default=1000,
@@ -91,6 +91,8 @@ parser.add_argument("--insert-length-sd", type=int, default=4,
 										help='The standard deviation of insert length variation in nucleotides. Set to zero for fixed-length inserts.  Default is 4')
 parser.add_argument("--insert-length-sd-cutoff", type=int, default=4, metavar='N',
 										help='Insert lengths are restricted to less than N standard dviations from the mean.  Default is 4')
+parser.add_argument("--amplicon-probe", type=str, default='GATCTCTGCTTCTGATGGCTCAAACAC', metavar='STR',
+										help="Anchoring/priming sequence for generating amplicon reads.  This should align with some RNA or DNA sequence, either sense or anti-sense.  String will be interpreted as 5'-> 3'.  Reads will be generated 5' -> 3' starting with the priming sequence.  Read 1 will have length given by --read-length-mean, --read-length-sd, and --read-length-sd-cutoff parameters.  Read 2 will be complementary to read 1 and of an identical length.  The default is a 27-mer that anchors on the reverse strand in EX1 of the beta chain C-region")
 
 parserGroup2 = parser.add_mutually_exclusive_group()
 parserGroup2.add_argument("--degrade-logistic", default=None, metavar="B:L:k:mid",
@@ -113,15 +115,15 @@ args = parser.parse_args()
 
 # Process our logging level arguments
 if( args.log_level == 'debug'):
-  sh.setLevel(logging.DEBUG)
+  log.setLevel(logging.DEBUG)
 elif( args.log_level =='info' ):
-  sh.setLevel(logging.INFO)
+  log.setLevel(logging.INFO)
 elif( args.log_level =='warning' ):
-  sh.setLevel(logging.WARNING)
+  log.setLevel(logging.WARNING)
 elif( args.log_level =='error' ): 
-  sh.setLevel(logging.ERROR)
+  log.setLevel(logging.ERROR)
 elif( args.log_level =='critical' ):
-  sh.setLevel(logging.CRITICAL)
+  log.setLevel(logging.CRITICAL)
 else:
   log.error("Error: Unknown log level %s", args.log_level)
 
@@ -220,105 +222,102 @@ else:
 						raise ValueError("Invalid chi-square parameters: %s" % args.population_chisquare_parameters)
 				
 
-# Obtain our simulated reads
-pairedReadOpt = True if args.read_type == 'paired' else False
-outputSequences = my_repertoire.simulateRead(args.sequence_count, args.sequence_type,
-																						 read_length_mean      = args.read_length_mean,
-																						 read_length_sd        = args.read_length_sd,
-																						 read_length_sd_cutoff = args.read_length_sd_cutoff,
-																						 inner_mate_length_mean      = args.insert_length_mean,
-																						 inner_mate_length_sd        = args.insert_length_sd,
-																						 inner_mate_length_sd_cutoff = args.insert_length_sd_cutoff,
-																						 paired_end = pairedReadOpt)
-
-# Write the read sequences to output file(s)
-if args.read_type == 'single':
-		outputFilename = args.output + '.fastq'
-		with open(outputFilename, 'w') as fp:
-				i = 0
-				for readTuple in outputSequences:
-						(read, comment) = readTuple
-						qualStr = 'I'*len(read)
-						fp.write("%s\n" % (comment))
-						fp.write("%s\n" % (read))
-						fp.write("+\n")
-						fp.write("%s\n" % qualStr)
-						i += 1
-elif args.read_type == 'paired':
-		output1Filename = args.output + '1.fastq'
-		output2Filename = args.output + '2.fastq'
-		with open(output1Filename, 'w') as output1:
-				with open(output2Filename, 'w') as output2:
-						i = 0
-						for readPairTuple in outputSequences:
-								(readPair, comment) = readPairTuple
-								read1, read2 = readPair
-								qualStr1 = 'I'*len(read1)
-								qualStr2 = 'I'*len(read2)
-
-								output1.write("%s\n" % (comment))
-								output1.write("%s\n" % (read1))
-								output1.write("+\n")
-								output1.write("%s\n" % qualStr1)
-
-								output2.write("%s\n" % (comment))
-								output2.write("%s\n" % (read2))
-								output2.write("+\n")
-								output2.write("%s\n" % qualStr2)
-
-								i += 1
-else:
-		raise ValueError("Unknown read_type encountered " + args.read_type)
-
-
-# Write degraded-quality reads, if requested by the user
-# n.b. the cmd line options were parsed previously and placed in degradeOptions dict
-if degradeOptions is not None:
-
-		method = degradeOptions['method']
-		baseError = float(degradeOptions['baseError'])
-		L = float(degradeOptions['L'])
-		k = float(degradeOptions['k'])
-		midpoint = float(degradeOptions['midpoint'])
-		phred = degradeOptions['phred']
+# Obtain our simulated reads, if requested
+if args.sequence_count > 0:
+		outputSequences = my_repertoire.simulateRead(args.sequence_count, args.sequence_type,
+																								 read_length_mean      = args.read_length_mean,
+																								 read_length_sd        = args.read_length_sd,
+																								 read_length_sd_cutoff = args.read_length_sd_cutoff,
+																								 inner_mate_length_mean      = args.insert_length_mean,
+																								 inner_mate_length_sd        = args.insert_length_sd,
+																								 inner_mate_length_sd_cutoff = args.insert_length_sd_cutoff,
+																								 amplicon_probe        = args.amplicon_probe,
+																								 read_type = args.read_type )
 		
+		# Write the read sequences to output file(s)
 		if args.read_type == 'single':
-				outputFilename = args.output + '.degraded.fastq'
+				outputFilename = args.output + '.fastq'
 				with open(outputFilename, 'w') as fp:
-						i = 0
-						for read in outputSequences:
-								ident = "@TCR_SIMULATED_%d" % (i)
-								fp.write(my_configuration.getDegradedFastq(read, method, ident, variability=args.degrade_variability, phred=phred, baseError=baseError, L=L, k=k, midpoint=midpoint))
-								i += 1
-		elif args.read_type == 'paired':
-				output1Filename = args.output + '1.degraded.fastq'
-				output2Filename = args.output + '2.degraded.fastq'
+						for readTuple in outputSequences:
+								(read, comment) = readTuple
+								qualStr = 'I'*len(read)
+								fp.write("%s\n" % (comment))
+								fp.write("%s\n" % (read))
+								fp.write("+\n")
+								fp.write("%s\n" % qualStr)
+		elif args.read_type == 'paired' or args.read_type == 'amplicon':
+				output1Filename = args.output + '1.fastq'
+				output2Filename = args.output + '2.fastq'
 				with open(output1Filename, 'w') as output1:
 						with open(output2Filename, 'w') as output2:
-								i = 0
-								for readPair in outputSequences:
+								for readPairTuple in outputSequences:
+										readPair, comment = readPairTuple
 										read1, read2 = readPair
-										ident = "@TCR_SIMULATED_%d" % (i)
-										output1.write(my_configuration.getDegradedFastq(read1, method, ident, variability=args.degrade_variability, phred=phred, baseError=baseError, L=L, k=k, midpoint=midpoint))
-										output2.write(my_configuration.getDegradedFastq(read2, method, ident, variability=args.degrade_variability, phred=phred, baseError=baseError, L=L, k=k, midpoint=midpoint))
+										qualStr1 = 'I'*len(read1)
+										qualStr2 = 'I'*len(read2)
+										
+										output1.write("%s\n" % comment)
+										output1.write("%s\n" % read1)
+										output1.write("+\n")
+										output1.write("%s\n" % qualStr1)
+										
+										output2.write("%s\n" % comment)
+										output2.write("%s\n" % read2)
+										output2.write("+\n")
+										output2.write("%s\n" % qualStr2)
+		else:
+				raise ValueError("Unknown read_type encountered " + args.read_type)
+
+
+
+		# Write degraded-quality reads, if requested by the user.  n.b. the cmd line options were parsed previously and placed in degradeOptions dict
+		if degradeOptions is not None:
+				method = degradeOptions['method']
+				baseError = float(degradeOptions['baseError'])
+				L = float(degradeOptions['L'])
+				k = float(degradeOptions['k'])
+				midpoint = float(degradeOptions['midpoint'])
+				phred = degradeOptions['phred']
+		
+				if args.read_type == 'single':
+						outputFilename = args.output + '.degraded.fastq'
+						with open(outputFilename, 'w') as fp:
+								i = 0
+								for readTuple in outputSequences:
+										read, comment = readTuple
+										ident = "@STIG_DEGRADED:readnum=%d" % (i)
+										fp.write(my_configuration.getDegradedFastq(read, method, ident, variability=args.degrade_variability, phred=phred, baseError=baseError, L=L, k=k, midpoint=midpoint))
 										i += 1
+				elif args.read_type == 'paired' or args.read_type == 'amplicon':
+						output1Filename = args.output + '1.degraded.fastq'
+						output2Filename = args.output + '2.degraded.fastq'
+						with open(output1Filename, 'w') as output1:
+								with open(output2Filename, 'w') as output2:
+										i = 0
+										for readPairTuple in outputSequences:
+												readPair, comment = readPairTuple
+												read1, read2 = readPair
+												ident = "@STIG_DEGRADED:readnum=%d" % (i)
+												output1.write(my_configuration.getDegradedFastq(read1, method, ident, variability=args.degrade_variability, phred=phred, baseError=baseError, L=L, k=k, midpoint=midpoint))
+												output2.write(my_configuration.getDegradedFastq(read2, method, ident, variability=args.degrade_variability, phred=phred, baseError=baseError, L=L, k=k, midpoint=midpoint))
+												i += 1
 
 				
-		else:
-				raise ValueError("Unknown read_type encountered" + args.read_type)
+				else:
+						raise ValueError("Unknown read_type encountered" + args.read_type)
 
 
+if args.load_population is None:
+		# Write statistics to an output file
+		statsFilename = args.output + '.statistics.csv'
+		with open(statsFilename, 'w') as fp:
+				for i in my_repertoire.getStatistics(addHeader = True):
+						fp.write(",".join(str(e) for e in i) + "\n")
 
-# Write statistics to an output file
-statsFilename = args.output + '.statistics.csv'
-with open(statsFilename, 'w') as fp:
-		for i in my_repertoire.getStatistics(addHeader = True):
-				fp.write(",".join(str(e) for e in i) + "\n")
-
-# Write our repertoire object to a file
-populationFilename = args.output + '.population.bin'
-with open(populationFilename, 'wb') as fp:
-		cPickle.dump(my_repertoire.freeze(), fp)
+		# Write our repertoire object to a file
+		populationFilename = args.output + '.population.bin'
+		with open(populationFilename, 'wb') as fp:
+				cPickle.dump(my_repertoire.freeze(), fp)
 
 
 log.info("All actions complete")

@@ -1,3 +1,9 @@
+BASE_OPTS=\
+--chr7-filename=./data/chr7.fa \
+--chr14-filename=./data/chr14.fa \
+--tcell-data=./data/tcell_receptor.tsv \
+data/*.fasta
+
 
 
 TCR_OPTS=\
@@ -15,29 +21,16 @@ TCR_OPTS=\
 data/*.fasta
 
 
-DEVEL_OPTS=\
---chr7-filename=./data/chr7.fa \
---chr14-filename=./data/chr14.fa \
---tcell-data=./data/tcell_receptor.tsv \
---output=test_output \
---repertoire-size=10 \
---population-size=1000 \
---read-type=paired \
+AMPLICON_OPTS=\
+--read-type=amplicon \
 --sequence-type=rna \
 --sequence-count=5 \
 --read-length-mean=48 \
---read-length-sd=0 \
---degrade-phred='555555555555776869382849@@@AAABBCCC' \
---degrade-variability=0.25 \
---log-level=debug \
-data/*.fasta
+--read-length-sd=0
 
-TEST_OPTS=\
---chr7-filename=./data/chr7.fa \
---chr14-filename=./data/chr14.fa \
---tcell-data=./data/tcell_receptor.tsv \
---log-level=debug \
-data/*.fasta
+DEGRADE_OPTS=\
+--degrade-phred='55555555555555555555' \
+--degrade-variability=0.5
 
 TR_BIN=/usr/bin/tr
 GREP_BIN=/bin/grep
@@ -51,10 +44,14 @@ all:
 work:
 	./lib/stig $(TCR_OPTS)
 
-devel:
-	./lib/stig $(DEVEL_OPTS)
+devel: amplicon
 
+devel.population.bin:
+	./lib/stig --output=devel --repertoire-size=100 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
 
+amplicon: devel.population.bin
+	./lib/stig --amplicon-probe=GATCTCTGCTTCTGATGGCTCAAACAC --log-level=debug --output=devel --load-population=devel.population.bin $(DEGRADE_OPTS) $(AMPLICON_OPTS) $(BASE_OPTS)
+	./lib/stig --amplicon-probe=AGAATCCTTACTTTGTGACACATTTGTTTGAGA --log-level=debug --output=devel --load-population=devel.population.bin $(DEGRADE_OPTS) $(AMPLICON_OPTS) $(BASE_OPTS)
 
 # Test targets
 test: test_help test_display_degradation
