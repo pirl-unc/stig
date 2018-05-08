@@ -1424,7 +1424,7 @@ class tcrRepertoire:
 		#                  So if your amplicon probe falls in the C-region,
 		#                  it should be reverse complement in order for reads
 		#                  to be generated 'toward' the CDR3 portion
-		#                  Default is AGATCTCTGCTTCTGATGGCTCAAACAC, which
+		#                  Default is GATCTCTGCTTCTGATGGCTCAAACAC, which
 		#                  anchors in Exon 1 of the beta chain C-region on the
 		#                  reverse strand.
 		#
@@ -1441,7 +1441,7 @@ class tcrRepertoire:
 		#            array, where comments[n] describes reads[n].
 		#
 		#
-		def simulateRead( self, count, space, distribution='gaussian', read_length_mean=25, read_length_sd=4, read_length_sd_cutoff=4, read_type = 'single', inner_mate_length_mean=100, inner_mate_length_sd=8, inner_mate_length_sd_cutoff=4, amplicon_probe = 'AGATCTCTGCTTCTGATGGCTCAAACAC' ):
+		def simulateRead( self, count, space, distribution='gaussian', read_length_mean=25, read_length_sd=4, read_length_sd_cutoff=4, read_type = 'single', inner_mate_length_mean=100, inner_mate_length_sd=8, inner_mate_length_sd_cutoff=4, amplicon_probe = 'GATCTCTGCTTCTGATGGCTCAAACAC' ):
 				self.log.debug("simulateRead() called...")
 
 				if space not in [ 'dna', 'rna' ]:
