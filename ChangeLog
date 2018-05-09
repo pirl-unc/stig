@@ -24,3 +24,7 @@ v1.1.1: 2018-5-08
 v.1.2.0: 2018-5-08
 * Added support for amplicon sequencing and supporting documentation
 * Fixed issue where empty files created with --sequence-count=0
+
+v.1.2.1: 2018-5-9
+* Clarified inner mate vs. insert length options and arguments
+* Documentation changes to specify locations of amplicon anchors
