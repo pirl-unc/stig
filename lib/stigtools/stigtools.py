@@ -1403,18 +1403,18 @@ class tcrRepertoire:
 		# read_length_sd_cutoff - Integer.  The number of standard deviations
 		#                         from the mean read length to include in generated
 		#                         reads.
-		# inner_mate_length_mean      - Integer.  The mean length of the inner mate
+		# insert_length_mean          - Integer.  The mean length of the inner mate
 		#                               portion of paired end reads.  Used only
 		#                               when generating paired end reads.  Setting
 		#                               this to zero will produced fix-length
 		#                               inner mate portions at the mean. Default
 		#                               is 100 nucleotides.
-		# inner_mate_length_sd        - Integer.  The standard deviation of the
+		# insert_length_sd            - Integer.  The standard deviation of the
 		#                               distribution of the length of the inner
 		#                               mate portion of generated reads.  Default
 		#                               is 8.
 		#
-		# inner_mate_length_sd_cutoff - Integer.  The number of standard
+		# insert_length_sd_cutoff     - Integer.  The number of standard
 		#                               deviations from the mean inner mate length
 		#                               to include in generated reads.
 		#
@@ -1424,7 +1424,7 @@ class tcrRepertoire:
 		#                  So if your amplicon probe falls in the C-region,
 		#                  it should be reverse complement in order for reads
 		#                  to be generated 'toward' the CDR3 portion
-		#                  Default is AGATCTCTGCTTCTGATGGCTCAAACAC, which
+		#                  Default is GATCTCTGCTTCTGATGGCTCAAACAC, which
 		#                  anchors in Exon 1 of the beta chain C-region on the
 		#                  reverse strand.
 		#
@@ -1441,7 +1441,7 @@ class tcrRepertoire:
 		#            array, where comments[n] describes reads[n].
 		#
 		#
-		def simulateRead( self, count, space, distribution='gaussian', read_length_mean=25, read_length_sd=4, read_length_sd_cutoff=4, read_type = 'single', inner_mate_length_mean=100, inner_mate_length_sd=8, inner_mate_length_sd_cutoff=4, amplicon_probe = 'AGATCTCTGCTTCTGATGGCTCAAACAC' ):
+		def simulateRead( self, count, space, distribution='gaussian', read_length_mean=25, read_length_sd=4, read_length_sd_cutoff=4, read_type = 'single', insert_length_mean=100, insert_length_sd=8, insert_length_sd_cutoff=4, amplicon_probe = 'GATCTCTGCTTCTGATGGCTCAAACAC' ):
 				self.log.debug("simulateRead() called...")
 
 				if space not in [ 'dna', 'rna' ]:
@@ -1450,9 +1450,10 @@ class tcrRepertoire:
 
 				outputReads = []
 						
-				# Choose an individual cell to read from (a TCR chain [e.g. alpha or beta] is chosen later)
 				readIndividual = None
-				while len(outputReads) < count: 
+				while len(outputReads) < count:
+						
+						# Choose an individual cell to read from (a TCR chain [e.g. alpha or beta] is chosen later)
 						randIndividual = random.random() * self.population_size
 						self.log.debug("Read from individual #%d (of %s)", randIndividual, self.population_size)
 						cumulativePopulation = 0
@@ -1464,7 +1465,7 @@ class tcrRepertoire:
 										break
 						outputComment='@STIG:readnum=%d:clone=%d' % (len(outputReads), j)
 								
-						# Calculate our read length for this particular read
+						# Calculate our required length(s) for this particular read
 						readLength = None
 						if distribution == 'gaussian':
 								if read_type == 'single':
@@ -1479,24 +1480,24 @@ class tcrRepertoire:
 								elif read_type == 'paired':
 										read1Length = 0
 										read2Length = 0
-										innerMateLength = 0
+										insertLength = 0
 										if read_length_sd > 0:
-												while abs(read1Length - read_length_mean) / read_length_sd > read_length_sd_cutoff and read1Length <= 0:
+												while abs(insertLength - insert_length_mean) / insert_length_sd > insert_length_sd_cutoff or insertLength <= 0:
+														insertLength = int(round(numpy.random.normal(insert_length_mean, insert_length_sd)))
+												while abs(read1Length - read_length_mean) / read_length_sd > read_length_sd_cutoff or read1Length <= 0 or read1Length > insertLength:
 														read1Length = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
-												while abs(read2Length - read_length_mean) / read_length_sd > read_length_sd_cutoff and read2Length <= 0:
+												while abs(read2Length - read_length_mean) / read_length_sd > read_length_sd_cutoff or read2Length <= 0 or read2Length > insertLength:
 														read2Length = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
-												while abs(innerMateLength - inner_mate_length_mean) / inner_mate_length_sd > inner_mate_length_sd_cutoff and innerMateLength <= 0:
-														innerMateLength = int(round(numpy.random.normal(inner_mate_length_mean, inner_mate_length_sd)))
 										else:
 												read1Length = read_length_mean
 												read2Length = read_length_mean
 												innerMateLength = inner_mate_length_mean
-										readLength = (read1Length, innerMateLength, read2Length)
+										readLength = (read1Length, insertLength, read2Length)
 
 								elif read_type == 'amplicon':
 										if read_length_sd > 0:
-												randLength = 0
-												while abs(randLength - read_length_mean) / read_length_sd > read_length_sd_cutoff and randLength <= 0:
+												readLength = 0
+												while abs(readLength - read_length_mean) / read_length_sd > read_length_sd_cutoff or readLength <= 0:
 														randLength = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
 												readLength = randLength
 										else:
@@ -1510,12 +1511,10 @@ class tcrRepertoire:
 								self.log.critical("Non-gaussian distributions are not supported at this time")
 								exit(-10)
 								#TODO: Implement non-gaussian distributions?
-										
-										
 						self.log.debug("Read length for this read will be: %s", readLength)
 
 						# Pick a location within this individual's DNA and generate the read
-						totalReadLength = readLength if isinstance(readLength, int) else readLength[0] + readLength[1] + readLength[2]
+						totalReadLength = readLength if isinstance(readLength, int) else readLength[1]
 
 						# Pick a chain to read from (alpha / beta or gamma / delta)
 						receptorCoordinates = None
@@ -1596,9 +1595,9 @@ class tcrRepertoire:
 								if len(outputSequence) != totalReadLength:
 										self.log.critical("Read length exception: Expected %d, got %d (read start: %d, sequence length: %d)", totalReadLength, len(outputSequence), startIndex, len(sequence))
 						elif read_type == 'paired':
-								outputReads.append(((outputSequence[0:readLength[0]], outputSequence[readLength[0] + readLength[1]:]), outputComment))
-								if len(outputReads[-1][0]) != read1Length or len(outputReads[-1][0]) != read2Length:
-										self.log.critical("Read length exception: Expected (%d:%d), got (%d:%d) (read start: %d, sequence length: %d", read1Length, read2Length, len(outputReads[-1][0]), len(outputReads[-1][1]), startIndex, len(sequence))
+								outputReads.append(((outputSequence[0:read1Length], self.config.reverseComplement(outputSequence[len(outputSequence) - read2Length:])), outputComment))
+								if len(outputReads[-1][0][0]) != read1Length or len(outputReads[-1][0][1]) != read2Length:
+										self.log.critical("Read length exception: Expected (%d:%d), got (%d:%d) (read start: %d, sequence length: %d)", read1Length, read2Length, len(outputReads[-1][0]), len(outputReads[-1][1]), startIndex, len(sequence))
 						elif read_type == 'amplicon':
 								outputReads.append(((outputSequence, self.config.reverseComplement(outputSequence)), outputComment))
 								if len(outputSequence) != totalReadLength:
