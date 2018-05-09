@@ -90,7 +90,7 @@ parser.add_argument("--insert-length-mean", type=int, default=48,
 parser.add_argument("--insert-length-sd", type=int, default=4,
 										help='The standard deviation of insert length variation in nucleotides. Set to zero for fixed-length inserts.  Default is 4')
 parser.add_argument("--insert-length-sd-cutoff", type=int, default=4, metavar='N',
-										help='Insert lengths are restricted to less than N standard dviations from the mean.  Default is 4')
+										help='Insert lengths are restricted to less than N standard deviations from the mean.  Default is 4')
 parser.add_argument("--amplicon-probe", type=str, default='GATCTCTGCTTCTGATGGCTCAAACAC', metavar='STR',
 										help="Anchoring/priming sequence for generating amplicon reads.  This should align with some RNA or DNA sequence, either sense or anti-sense.  String will be interpreted as 5'-> 3'.  Reads will be generated 5' -> 3' starting with the priming sequence.  Read 1 will have length given by --read-length-mean, --read-length-sd, and --read-length-sd-cutoff parameters.  Read 2 will be complementary to read 1 and of an identical length.  The default is a 27-mer that anchors on the reverse strand in EX1 of the beta chain C-region")
 
@@ -228,9 +228,9 @@ if args.sequence_count > 0:
 																								 read_length_mean      = args.read_length_mean,
 																								 read_length_sd        = args.read_length_sd,
 																								 read_length_sd_cutoff = args.read_length_sd_cutoff,
-																								 inner_mate_length_mean      = args.insert_length_mean,
-																								 inner_mate_length_sd        = args.insert_length_sd,
-																								 inner_mate_length_sd_cutoff = args.insert_length_sd_cutoff,
+																								 insert_length_mean      = args.insert_length_mean,
+																								 insert_length_sd        = args.insert_length_sd,
+																								 insert_length_sd_cutoff = args.insert_length_sd_cutoff,
 																								 amplicon_probe        = args.amplicon_probe,
 																								 read_type = args.read_type )
 		
