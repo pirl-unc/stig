@@ -254,9 +254,9 @@ Probe           ^^^^
 
 #### 5.2.3 Amplicon probes
 
-The default value for --amplicon-probe option is a 27-mer that anchors on the reverse strand of EX1 of the C-region on beta chains: `GATCTCTGCTTCTGATGGCTCAAACAC`
+The default value for --amplicon-probe option is a 27-mer that anchors on the reverse strand of EX1 of the C-region on beta chains, about ~480nt from the V-region start codon: `GATCTCTGCTTCTGATGGCTCAAACAC`
 
-Here is a slightly longer probe that anchors on the reverst strand of EX1 of the C-region on alpha chains: `AGAATCCTTACTTTGTGACACATTTGTTTGAGA`
+Here is a slightly longer probe that anchors on the reverse strand of EX1 of the C-region on alpha chains, about ~510nt from the V-region start codon: `AGAATCCTTACTTTGTGACACATTTGTTTGAGA`
 
 These values have only undergone limited testing in STIG, and may not function as intended in any wet-lab/in-vitro setting.
 
