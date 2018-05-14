@@ -6,15 +6,15 @@ Current for v1.2.1
 Table of contents
 -----------------
 
-NAME
-SYNOPSIS
-DESCRIPTION
-OPTIONS
-INVOCATION
-SEE ALSO
-FILES
-AUTHORS
-BUG REPORTS
+1. NAME
+2. SYNOPSIS
+3. DESCRIPTION
+4. OPTIONS
+5. INVOCATION
+6. SEE ALSO
+7. FILES
+8. AUTHORS
+9. BUG REPORTS
 
 ## 1. NAME
 
@@ -29,6 +29,13 @@ STIG - Synthetic TCR Informatics Generator
 ## 3. DESCRIPTION
 
 STIG is a tool for creating artificial T-cell repertoires and producing simulated sequencing data from them.  Many characteristics of the repertoires and the sequencing output can be customized.  Reads can be generated in both RNA and DNA space.  Applications include evaluating and optimizing tools for performing analysis of T-cell receptors.
+
+### 3.1 Conventions
+
+STIG utilizes a number of underlying assumptions when reading input and output data:
+
+1. Quality strings are Phred+33 (Sanger) format: (0,40) or (!, I), with I being highest quality
+2. DNA and RNA inputs and outputs are 5' --> 3' direction, even when generating paired end reads or specififying amplicon probes
 
 
 ## 4. OPTIONS
@@ -47,7 +54,8 @@ usage: stig [-h] [--chr7-filename FILE] [--chr14-filename FILE]
             [--insert-length-mean INSERT_LENGTH_MEAN]
             [--insert-length-sd INSERT_LENGTH_SD]
             [--insert-length-sd-cutoff N] [--amplicon-probe STR]
-            [--degrade-logistic B:L:k:mid | --degrade-phred PHRED_STRING]
+            [--degrade-logistic B:L:k:mid | --degrade-phred PHRED_STRING | --degrade-fastq FILE[,FILE2]
+            | --degrade-fastq-random FILE[,FILE2]]
             [--degrade-variability FLOAT] [--display-degradation]
             [--receptor-ratio RATIO]
             [--log-level {debug,info,warning,error,critical}]
@@ -134,33 +142,44 @@ optional arguments:
                         Default is 4
   --insert-length-sd-cutoff N
                         Insert lengths are restricted to less than N standard
-                        dviations from the mean. Default is 4
+                        deviations from the mean. Default is 4
   --amplicon-probe STR  Anchoring/priming sequence for generating amplicon
                         reads. This should align with some RNA or DNA
-                        sequence, either sense or anti-sense. String will be
-                        interpreted as 5'-> 3'. Reads will be generated 5' ->
-                        3' starting with the priming sequence. Read 1 will
-                        have length given by --read-length-mean, --read-
-                        length-sd, and --read-length-sd-cutoff parameters.
-                        Read 2 will be complementary to read 1 and of an
-                        identical length. The default is an antisense 28-mer
-                        that anchors in EX1 of the beta chain C-region
+                        sequence, either sense or anti-sense. Read 1 will have
+                        length given by --read-length-* options. Read 2 will
+                        be complementary to read 1 and of an identical length.
+                        The default value is a 27-mer that anchors on the
+                        reverse strand in EX1 of the beta chain C-region
   --degrade-logistic B:L:k:mid
-                        Simulate non-optimal quality using the logstic
+                        Simulate non-optimal quality using the logistic
                         (sigmoid) function. Takes an argument formatted as
                         'B:L:k:mid'. B - Base error rate probability. L -
                         Maximum error rate. k - Steepness factor. mid -
                         Midpoint, this is the base position where error rate
                         is equal to 1/2 of L. Default is off. This option is
-                        mutually exclusive to --degrade-phred. See: --display-
-                        degradation, --degrade-variability
+                        mutually exclusive to --degrade-phred, --degrade-
+                        fastq, and --degrade-fastq-random. See: --degrade-
+                        variability
   --degrade-phred PHRED_STRING
                         Simulate non-optimal quality using a Phred+33 string
                         to specify quality on a per-nucleotide basis. If a
                         generated read is longer than the given phred string,
                         then the last character in the phred string is used.
                         Default is off. This option is mutually exclusive to
-                        --degrade-logistic. See: --degrade-variability
+                        --degrade-logistic, --degrade-fastq and --degrade-
+                        fastq-random. See: --degrade-variability
+  --degrade-fastq FILE[,FILE2]
+                        Simulate non-optimal quality by degrading reads based
+                        on Phred+33 quality strings from the given fastq FILE,
+                        or files FILE1,FILE2. Two files required when
+                        generating paired or amplicon reads. Output quality
+                        strings are assigned from FILE in a stepwise fashion
+  --degrade-fastq-random FILE[,FILE2]
+                        Simulate non-optimal quality by degrading reads based
+                        on Phred+33 quality strings from the given fastq FILE,
+                        or files FILE1,FILE2. Two files required when
+                        generating paired or amplicon reads. Output quality
+                        strings are assigned from FILE randomly
   --degrade-variability FLOAT
                         Applies a relative variability in the per-nucleotide
                         error applied by the --degrade option. If a given base
@@ -182,6 +201,7 @@ optional arguments:
   --log-level {debug,info,warning,error,critical}
                         Logging level. Default is warning and above
 
+Please see manual or README for further details
 ```
 
 ## 4.1 Options overview
@@ -199,13 +219,69 @@ The majority of options fall into a few broad categories:
 
 
 
-### 5.2 Amplicon data
+### 5.2 Degrading reads
+
+
+By default, STIG generates outputs with 100% accuracy against the underlying simulated TCR.  These reads are placed in the output fastq file(s) (by default 'stig.out.fastq', but can be overridden by the `--output` option).  n.b. that because the Phred+33 standard does not have a "0% chance of error" score, STIG will label these reads as of the highest quality available ('I', by Phred+33).
+
+It is frequently useful to have less-than-perfect quality for testing purposes, as this simulates real-world data.  STIG has several mechanisms for degrading the output to match certain criteria.  Degraded outputs are given the suffix `.degraded` in the fastq output filename.  All reads are labeled with a `readnum` value that corresponds between degraded and non-degraded fastq files, so one can see exactly what changes were made to the output based on the quality string.
+
+Note that just because a given position has a low quality score does not necessarily mean that the read doesn't match the underlying DNA/RNA.  STIG will randomly assign bases at each position based on the probabilities given by the quality string.  For example, a location with a degraded quality score of `I` will have an error probability of 0.001, or 0.1%.  If STIG determines a location should contain a simulated error, then the location is replaced with a random nucleotide.  Of course, there is a 25% chance it will substitute the same base value at that location.
+
+#### 5.2.1 Displaying degredation
+
+For tuning `--degrade-logistic` and `--degrade-variability` parameters, the `--display-degradation` option is available.  When given, STIG will not read input or generate outputs, but instead will display an example quality string and display the error rates per position.
+
+#### 5.2.2 Degradation with a logistic function
+
+Specified by the `--degrade-logistic=B:L:k:mid` option.  This uses a logistic (sigmoid) curve to degrade outputs based on their length.  The function parameters B:L:k:mid refer to the base error rate, maximum error rate, steepness factor, and midpoint length, respectively.  The `--display-degradation` option is often useful for tuning these options.
+
+The `--degrade-variability` option can also be applied to introduce additional error.
+
+This option is mutually exclusive to `--degrade-phred`, `--degrade-fastq` and `--degrade-fastq-random`.
+
+#### 5.2.3 Degradation specified by a Phred+33 string
+
+Specified by the `--degrade-phred=PHRED` option.  This uses the error probabilites speficied by the input string and applies them to the generated reads, where the error probability of the nth read in an output is given by the nth quality score of `PHRED`.  If the generated read is longer than `PHRED`, then the last quality score in `PHRED` is used for the remaining bases.
+
+The `--degrade-variability` option can also be applied to introduce additional error.
+
+This option is mutually exclusive to `--degrade-logistic`, `--degrade-fastq` and `--degrade-fastq-random`.
+
+#### 5.2.4 Degradation specified by fastq quality scores
+
+Specified by the `--degrade-fastq=FILE[,FILE2]` option.  This uses the error probabilities specified by reads in a fastq formatted file `FILE` and applies them to the generated reads.  This is done in a stepwise fashion, such that the nth read generated has the quality score of the nth read in `FILE`.  In the event that more reads are generated than reads in `FILE`, the quality strings will be recycled starting from the start of `FILE`.
+
+For paired-end or amplicon reads one may specify a second file, `FILE2` from which the quality scores for paired reads are pulled.
+
+The `--degrade-variability` option can also be applied to introduce additional error.
+
+This option is mutually exclusive to `--degrade-logistic`, `--degrade-phred`, and `--degrade-fastq-random`.
+
+#### 5.2.5 Degradation specified by fastq quality scores, randomized
+
+Specified by the `--degrade-fastq-random=FILE[,FILE2]` option.  This uses the error probabilities specified by reads in the fastq formatted file `FILE` and applies them to the generated reads.  This is done in a random fashion, such that each generated read uses the quality score of a random read from `FILE`.  The random order is without replacement, so fastq quality strings are not used more than once unless more reads are requested than there are lines in the fastq file.
+
+For paired-end or amplicon reads one may specify a second file, `FILE2` from which the quality scores for paired reads are pulled.  These are randomized and assigned exclusively to the paired read.
+
+The `--degrade-variability` option can also be applied to introduce additional error.
+
+This option is mutually exclusive to `--degrade-logistic`, `--degrade-phred`, and `--degrade-fastq`.
+
+#### 5.2.6 Degradation variability
+
+Specificed by the `--degrade-variability=N` option.  `N` should be in range (0,1).  Default is 0 (off).  This introduces variability into underlying error specified by `--degrade-logistic`, `--degrade-phred`, `--degrade-fastq`, and `--degrade-fastq-random`.  `N` is interpreted as a maximum value by which the error rate should fluctuate at each position, relative to the value of the error rate at each position.  e.g. with N = 0.01, a position with an error rate `e` will have an effective error rate in the range `e +/- e * 0.01`.
+
+Note that quality scores in degraded output reflect the additional variability introduced from this option on a per-position base.  Some positions may (randomly) have no extra error induced, whereas others may have up to N*100% additional error added (or subtracted).
+
+
+### 5.3 Amplicon data
 
 Amplicon sequencing uses a "priming" string to anchor reads near an area of interest, thus enriching the read depth at that location (versus standard single or pair-end sequencing).  This technique is commonly used in T-cell repertoire analysis to target the V/D/J recombination portion.
 
 Amplicon probes are always given in a 5' --> 3' direction.  STIG will generate reads in the 3' direction from the amplicon probe, and supports reverse-strand matching.  The read length for amplicon sequencing can be specified by the --read-length parameters -- although note that in practice, most amplicon reads will be long enough to cover the entire mRNA from the probe location into the UTR.  In STIG's amplicon sequencing, a second "paired" read is generated which is simply the complement of the original strand.
 
-#### 5.2.1 Forward strand example 
+#### 5.3.1 Forward strand example 
 
 Let us say this is our forward strand (either DNA or RNA, the choice is not relevant for this example):
 
@@ -229,9 +305,9 @@ Do not forget that we get a reverse complement read as well:
 ```
 (n.b. STIG's output is always 5' --> 3', which is why the above string is reversed.)
 
-#### 5.2.2 Reverse strand example
+#### 5.3.2 Reverse strand example
 
-The C-region is a nice "constant" area to anchor probes in, but if the amplicon sequencing proceeds in a 3' direction this doesn't help capture the CDR3 region.  The solution is to use a probe which matches the reverse strand, so that reads capture the V, D, J portions before the C-region probe.
+The C-region is a nice "constant" area to anchor probes in, but if the amplicon sequencing proceeds in a 3' direction this doesn't help capture the CDR3 region.  The solution is to use a probe which matches the reverse strand, so that reads capture the V, D, J portions 'upstream' (i.e. in the 5' direction) from the C-region probe.
 
 Our DNA strand again, now with the complementary strand given:
 
@@ -254,7 +330,7 @@ Probe           ^^^^
 
 (Again, the paired read is given 5' --> 3' )
 
-#### 5.2.3 Amplicon probes
+#### 5.3.3 Amplicon probes
 
 The default value for --amplicon-probe option is a 27-mer that anchors on the reverse strand of EX1 of the C-region on beta chains, about ~480nt from the V-region start codon: `GATCTCTGCTTCTGATGGCTCAAACAC`
 

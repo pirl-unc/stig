@@ -92,13 +92,17 @@ parser.add_argument("--insert-length-sd", type=int, default=4,
 parser.add_argument("--insert-length-sd-cutoff", type=int, default=4, metavar='N',
 										help='Insert lengths are restricted to less than N standard deviations from the mean.  Default is 4')
 parser.add_argument("--amplicon-probe", type=str, default='GATCTCTGCTTCTGATGGCTCAAACAC', metavar='STR',
-										help="Anchoring/priming sequence for generating amplicon reads.  This should align with some RNA or DNA sequence, either sense or anti-sense.  String will be interpreted as 5'-> 3'.  Reads will be generated 5' -> 3' starting with the priming sequence.  Read 1 will have length given by --read-length-mean, --read-length-sd, and --read-length-sd-cutoff parameters.  Read 2 will be complementary to read 1 and of an identical length.  The default is a 27-mer that anchors on the reverse strand in EX1 of the beta chain C-region")
+										help="Anchoring/priming sequence for generating amplicon reads.  This should align with some RNA or DNA sequence, either sense or anti-sense.  Read 1 will have length given by --read-length-* options.  Read 2 will be complementary to read 1 and of an identical length.  The default value is a 27-mer that anchors on the reverse strand in EX1 of the beta chain C-region")
 
 parserGroup2 = parser.add_mutually_exclusive_group()
 parserGroup2.add_argument("--degrade-logistic", default=None, metavar="B:L:k:mid",
-										help='Simulate non-optimal quality using the logstic (sigmoid) function.  Takes an argument formatted as \'B:L:k:mid\'.  B - Base error rate probability.  L - Maximum error rate. k - Steepness factor. mid - Midpoint, this is the base position where error rate is equal to 1/2 of L. Default is off.  This option is mutually exclusive to --degrade-phred.  See: --display-degradation, --degrade-variability')
+													help='Simulate non-optimal quality using the logistic (sigmoid) function.  Takes an argument formatted as \'B:L:k:mid\'.  B - Base error rate probability.  L - Maximum error rate. k - Steepness factor. mid - Midpoint, this is the base position where error rate is equal to 1/2 of L. Default is off.  This option is mutually exclusive to --degrade-phred, --degrade-fastq, and --degrade-fastq-random.  See: --degrade-variability')
 parserGroup2.add_argument("--degrade-phred", metavar="PHRED_STRING", default=None,
-										help='Simulate non-optimal quality using a Phred+33 string to specify quality on a per-nucleotide basis.  If a generated read is longer than the given phred string, then the last character in the phred string is used.  Default is off.  This option is mutually exclusive to --degrade-logistic.  See: --degrade-variability')
+													help='Simulate non-optimal quality using a Phred+33 string to specify quality on a per-nucleotide basis.  If a generated read is longer than the given phred string, then the last character in the phred string is used.  Default is off.  This option is mutually exclusive to --degrade-logistic, --degrade-fastq and --degrade-fastq-random.  See: --degrade-variability')
+parserGroup2.add_argument("--degrade-fastq", metavar="FILE[,FILE2]", default=None,
+													help='Simulate non-optimal quality by degrading reads based on Phred+33 quality strings from the given fastq FILE, or files FILE1,FILE2. Two files required when generating paired or amplicon reads.  Output quality strings are assigned from FILE in a stepwise fashion')
+parserGroup2.add_argument("--degrade-fastq-random", metavar='FILE[,FILE2]', default=None,
+													help='Simulate non-optimal quality by degrading reads based on Phred+33 quality strings from the given fastq FILE, or files FILE1,FILE2.  Two files required when generating paired or amplicon reads.  Output quality strings are assigned from FILE randomly')
 
 parser.add_argument("--degrade-variability", default=0, metavar='FLOAT', type=float,
 										help='Applies a relative variability in the per-nucleotide error applied by the --degrade option.  If a given base were to have an error rate of 0.1 (10%%), then a degrade-variability of 0.5 (50%%) would result in an error rate in the range of 0.1 +/- 0.1 * 0.5.  Default is 0')
@@ -128,10 +132,13 @@ else:
   log.error("Error: Unknown log level %s", args.log_level)
 
 
-# Process options 'display-degradation', 'degrade-logistic' and 'degrade-phred'
+# Process degredation options: 'display-degradation', 'degrade-logistic', 'degrade-phred', 'degrade-fastq', and 'degrade-fastq-random'
 degradeOptions = None
-if args.degrade_logistic is not None or args.degrade_phred is not None :
-		method, baseError, L, k, midpoint, phred = [0] * 6 # Initialize to zero
+if ( args.degrade_logistic is not None or
+		 args.degrade_phred is not None or
+		 args.degrade_fastq is not None or
+		 args.degrade_fastq_random is not None ):
+		method, baseError, L, k, midpoint, phred, filename = [0] * 7 # Initialize to zero
 		
 		if args.degrade_logistic is not None:
 				if re.match('^((?:\d+)|(?:\d*.\d+)):((?:\d+)|(?:\d*.\d+)):((?:\d+)|(?:\d*.\d+)):((?:\d+)|(?:\d*.\d+))$', args.degrade_logistic):
@@ -150,8 +157,30 @@ if args.degrade_logistic is not None or args.degrade_phred is not None :
 				else:
 						log.critical("Invalid argument for --degrade-phred: \"%s\".  Valid example: IIIIIIII444433", args.degrade_phred)
 						exit(-1)
+		elif args.degrade_fastq is not None:
+				matches = re.search('^(.+),(.+)$', args.degrade_fastq)
+				if matches is not None and args.read_type not in ('paired', 'amplicon'):
+						log.critical("--args-degrade-fastq cannot take two filenames unless generating paired or amplicon reads")
+						exit(-10)
+				elif matches is None and args.read_type in ('paired', 'amplicon'):
+						log.critical("--args-degrade-fastq must take two filenames when generating paired or amplicon reads")
+						exit(-10)
+				method = 'fastq'
+				filename = args.degrade_fastq
+
+		elif args.degrade_fastq_random is not None:
+				matches = re.search('^(.+),(.+)$', args.degrade_fastq_random)
+				if matches is not None and args.read_type not in ('paired', 'amplicon'):
+						log.critical("--args-degrade-fastq cannot take two filenames unless generating paired or amplicon reads")
+						exit(-10)
+				elif matches is None and args.read_type in ('paired', 'amplicon'):
+						log.critical("--args-degrade-fastq must take two filenames when generating paired or amplicon reads")
+						exit(-10)
+
+				method = 'fastq-random'
+				filename = args.degrade_fastq_random				
 		else:
-				raise ValueError("Fallen through to an invalid location")
+				raise ValueError("Fallen through to an invalid choice for degradation")
 
 		degradeOptions = {
 				'method': method,
@@ -159,9 +188,11 @@ if args.degrade_logistic is not None or args.degrade_phred is not None :
 				'L': L,
 				'k': k,
 				'midpoint': midpoint,
-				'phred': phred
+				'phred': phred,
+				'filename': filename
 				}
 
+		
 # Display degradation output, if --display-degradation given
 if( args.display_degradation is True and
 		degradeOptions is not None ):
@@ -177,7 +208,7 @@ elif args.display_degradation is True:
 		raise ValueError("--display-degradation requires a degradation method.  See --degrade-logistic, --degrade-phred under help")
 
 
-#  Make sure we have the necessary options given to Generate synthetic reads
+#  Make sure we have the necessary options given to generate synthetic reads
 if( args.chr7_filename  is None or
 		args.chr14_filename is None or
 		args.tcell_data     is None or
@@ -185,12 +216,14 @@ if( args.chr7_filename  is None or
 		log.critical("Required command-line options missing (chr7-filename, chr14-filename, tcell-data or allele files).  See --help")
 		exit(-10)
 
+		
 # Create our configuration object
 my_configuration = stigtools.tcrConfig(log=log.getChild('tcrConfig'))
 my_configuration.readTCRConfig(args.tcell_data)
 my_configuration.readAlleles( args.allele_files )
 my_configuration.setChromosomeFiles(chr7=args.chr7_filename, chr14=args.chr14_filename)
-		
+
+
 # Load our TCR repertoire from file, if requested
 my_repertoire = None
 if args.load_population is not None:
@@ -278,7 +311,42 @@ if args.sequence_count > 0:
 				k = float(degradeOptions['k'])
 				midpoint = float(degradeOptions['midpoint'])
 				phred = degradeOptions['phred']
-		
+				filename = degradeOptions['filename']
+
+				# Phred strings used for degradation are read from an array
+				phred1 = [ phred ]
+				phred2 = [ phred ]
+				
+				# If the user requests we degrade based on FASTQ quality strings, read them into arrays
+				if method == 'fastq' or method == 'fastq-random':
+						log.debug("Using FASTQ-based degradation")
+						method = 'phred' # This is implemented as a special case of Phred degredation
+						phred1 = []
+						phred2 = []
+						
+						matches = re.search('^(.+),(.+)$', filename)
+						if matches is not None:
+								filename1 = matches.group(1)
+								filename2 = matches.group(2)
+								log.debug("Fastq-degrade filenames are %s and %s", filename1, filename2)
+								phred1 = my_configuration.getFastqQualities(filename1)
+								phred2 = my_configuration.getFastqQualities(filename2)
+								if len(phred1) <= 0:
+										log.critical("Invalid number of fastq quality strings %d in file %s", phred1.len(), filename)
+										exit(-10)
+								if len(phred2) <= 0:
+										log.critical("Invalid number of fastq quality strings %d in file %s", phred2.len(), filename)								
+										exit(-10)										
+						else:
+								log.debug("Fastq-degrade filename is %s", filename)
+								phred1 = my_configuration.getFastqQualities(filename)
+								if len(phred1) <= 0:
+										log.critical("Invalid number of fastq quality strings %d in file %s", phred1.len(), filename)
+										exit(-10)
+						if method == 'fastq-random':
+								shuffle(phred1)
+								shuffle(phred2)
+										
 				if args.read_type == 'single':
 						outputFilename = args.output + '.degraded.fastq'
 						with open(outputFilename, 'w') as fp:
@@ -286,7 +354,7 @@ if args.sequence_count > 0:
 								for readTuple in outputSequences:
 										read, comment = readTuple
 										ident = "@STIG_DEGRADED:readnum=%d" % (i)
-										fp.write(my_configuration.getDegradedFastq(read, method, ident, variability=args.degrade_variability, phred=phred, baseError=baseError, L=L, k=k, midpoint=midpoint))
+										fp.write(my_configuration.getDegradedFastq(read, method, ident, variability=args.degrade_variability, phred=phred1[i % len(phred1)], baseError=baseError, L=L, k=k, midpoint=midpoint))
 										i += 1
 				elif args.read_type == 'paired' or args.read_type == 'amplicon':
 						output1Filename = args.output + '1.degraded.fastq'
@@ -298,11 +366,9 @@ if args.sequence_count > 0:
 												readPair, comment = readPairTuple
 												read1, read2 = readPair
 												ident = "@STIG_DEGRADED:readnum=%d" % (i)
-												output1.write(my_configuration.getDegradedFastq(read1, method, ident, variability=args.degrade_variability, phred=phred, baseError=baseError, L=L, k=k, midpoint=midpoint))
-												output2.write(my_configuration.getDegradedFastq(read2, method, ident, variability=args.degrade_variability, phred=phred, baseError=baseError, L=L, k=k, midpoint=midpoint))
+												output1.write(my_configuration.getDegradedFastq(read1, method, ident, variability=args.degrade_variability, phred=phred1[i % len(phred2)], baseError=baseError, L=L, k=k, midpoint=midpoint))
+												output2.write(my_configuration.getDegradedFastq(read2, method, ident, variability=args.degrade_variability, phred=phred2[i % len(phred1)], baseError=baseError, L=L, k=k, midpoint=midpoint))
 												i += 1
-
-				
 				else:
 						raise ValueError("Unknown read_type encountered" + args.read_type)
 
