@@ -386,7 +386,7 @@ class tcrConfig:
 				
 				with open(filename) as fp:
 						self.log.info("Bytes requested %d, seek %d, offset %d, reading +%d",
-													end-start,
+													end-start + 1,
 													(end-start+int(math.floor(start/lineLength)) -1),
 													offset,
 													int(math.floor((end-start)/lineLength)))
@@ -490,7 +490,7 @@ class tcrConfig:
 												segmentChoices.append(i)
 												
 				# Throw an error here if there are no possible join candidates.
-				# This should never happen
+				# This should never happen if our input probabilities are correctly given
 				if len(segmentChoices) == 0:
 						self.log.critical("No possible segments to join")
 						exit(-10)
@@ -946,7 +946,7 @@ class tcrConfig:
 				phred33Reference = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHI"
         #                   0 1234567890123456789012345678901234567890
 				if method not in ('phred', 'logistic'):
-						raise ValueError("Method %s must be either logistic or phred" % method)
+						raise ValueError("Method must be either logistic or phred (given: \"%s\")" % method)
 						exit(-10)
 
 				if method == 'logistic':
@@ -1015,7 +1015,33 @@ class tcrConfig:
 						raise ValueError("Invalid method \"%s\". We should not be here" % method)
 
 
-
+		# getFastqQuality - Read all quality strings from a FASTQ-formatted file
+		# 
+		# Arguments:
+		# 
+		# filename - Filename of the file to read
+		# 
+		# Return value:
+		# 
+		# An array of strings containing the quality strings from the file
+		# 
+		# 
+		def getFastqQualities(self, filename ):
+				self.log.info("getFastqQualities() called...")
+				qualities = []
+				with open(filename, 'r') as input1:
+						lineNum = 0
+						for line in input1:
+								lineNum += 1
+								if lineNum % 4 == 0:
+										if not re.match(r'^[!\"#\$%&\'\(\)\*\+,-./0123456789:;<=>?@ABCDEFGHI]+$', line):
+												self.log.warning("Invalid quality string on line %d: %s", lineNum, line)
+										else:
+												qualities.append(line.strip("\n"))
+						if lineNum %4 != 0:
+								self.log.warning("Unexpected number of lines (should be divisible by 4) in fastq formatted file %s: %d", filename, lineNum)
+								
+				return qualities
 
 
 				
@@ -1455,7 +1481,7 @@ class tcrRepertoire:
 						
 						# Choose an individual cell to read from (a TCR chain [e.g. alpha or beta] is chosen later)
 						randIndividual = random.random() * self.population_size
-						self.log.debug("Read from individual #%d (of %s)", randIndividual, self.population_size)
+						self.log.debug("Starting to generate new read from individual #%d out of %d", randIndividual, self.population_size)
 						cumulativePopulation = 0
 						for j in range(0, len(self.repertoire)):
 								cumulativePopulation += self.population[j]
@@ -1470,10 +1496,9 @@ class tcrRepertoire:
 						if distribution == 'gaussian':
 								if read_type == 'single':
 										if read_length_sd > 0:
-												randLength = 0
-												while abs(randLength - read_length_mean) / read_length_sd > read_length_sd_cutoff and randLength <= 0:
-														randLength = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
-												readLength = randLength
+												readLength = 0
+												while abs(readLength - read_length_mean) / read_length_sd > read_length_sd_cutoff or readLength <= 0:
+														readLength = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
 										else:
 												readLength = read_length_mean
 										
@@ -1498,8 +1523,7 @@ class tcrRepertoire:
 										if read_length_sd > 0:
 												readLength = 0
 												while abs(readLength - read_length_mean) / read_length_sd > read_length_sd_cutoff or readLength <= 0:
-														randLength = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
-												readLength = randLength
+														readLength = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
 										else:
 												readLength = read_length_mean
 
@@ -1511,10 +1535,11 @@ class tcrRepertoire:
 								self.log.critical("Non-gaussian distributions are not supported at this time")
 								exit(-10)
 								#TODO: Implement non-gaussian distributions?
-						self.log.debug("Read length for this read will be: %s", readLength)
 
 						# Pick a location within this individual's DNA and generate the read
 						totalReadLength = readLength if isinstance(readLength, int) else readLength[1]
+
+						self.log.debug("Read length for this read will be: %s", totalReadLength)
 
 						# Pick a chain to read from (alpha / beta or gamma / delta)
 						receptorCoordinates = None
@@ -1535,11 +1560,13 @@ class tcrRepertoire:
 
 						chromosome, sequenceStart, strandStart, sequence, sequenceEnd, strandEnd = receptorCoordinates
 
-						# Determine a location within this chain's sequence and pull the read						
+						# Determine a location within this chain's sequence and pull the read
 						outputSequence = ''
 						if read_type != 'amplicon': # Non amplicon reads have a random location selected...
-								self.log.debug("Choosing between [-100, %d]", len(sequence) + 100 - totalReadLength)
-								startIndex = random.choice(range(-100, len(sequence) + 100 - totalReadLength ))
+								startRange = 0 - totalReadLength + 1
+								endRange = len(sequence) - 1
+								self.log.debug("Choosing between [%d, %d]", startRange, endRange)
+								startIndex = random.choice(range(startRange, endRange)) # Range is /inclusive/
 								outputComment = outputComment + ":randpos=%d" % startIndex
 						elif read_type == 'amplicon':
 								if sequence.find(amplicon_probe) > 0:
@@ -1564,9 +1591,9 @@ class tcrRepertoire:
 								_5UTRBases = abs(startIndex)
 
 						_3UTRBases = 0
-						if   startIndex >= 0 and (len(sequence) - startIndex) < totalReadLength:
+						if   startIndex >= 0 and (len(sequence) - startIndex) < totalReadLength: # Read spans sequence and 3' UTR
 								_3UTRBases = totalReadLength - (len(sequence) - startIndex)
-						elif startIndex <  0 and (len(sequence) + abs(startIndex)) < totalReadLength:
+						elif startIndex <  0 and (len(sequence) + abs(startIndex)) < totalReadLength: # Read spans 5' UTR, sequence and 3' UTR
 								_3UTRBases = totalReadLength - (len(sequence) + abs(startIndex))
 
 						self.log.debug("Starting read at position %d, 5p %db 3p %db", startIndex, _5UTRBases, _3UTRBases)
@@ -1593,17 +1620,21 @@ class tcrRepertoire:
 						if read_type == 'single':
 								outputReads.append((outputSequence, outputComment))
 								if len(outputSequence) != totalReadLength:
-										self.log.critical("Read length exception: Expected %d, got %d (read start: %d, sequence length: %d)", totalReadLength, len(outputSequence), startIndex, len(sequence))
+										self.log.critical("Read length exception: Expected %d, got %d (read start: %d, sequence length: %d, 5p UTR: %d, 3p UTR: %d)", totalReadLength, len(outputSequence), startIndex, len(sequence), _5UTRBases, _3UTRBases)
+										exit(-10)
 						elif read_type == 'paired':
 								outputReads.append(((outputSequence[0:read1Length], self.config.reverseComplement(outputSequence[len(outputSequence) - read2Length:])), outputComment))
 								if len(outputReads[-1][0][0]) != read1Length or len(outputReads[-1][0][1]) != read2Length:
-										self.log.critical("Read length exception: Expected (%d:%d), got (%d:%d) (read start: %d, sequence length: %d)", read1Length, read2Length, len(outputReads[-1][0]), len(outputReads[-1][1]), startIndex, len(sequence))
+										self.log.critical("Read length exception: Expected (%d:%d), got (%d:%d) (read start: %d, sequence length: %d, 5p UTR: %d, 3p UTR: %d)", read1Length, read2Length, len(outputReads[-1][0]), len(outputReads[-1][1]), startIndex, len(sequence), _5UTRBases, _3UTRBases)
+										exit(-10)
 						elif read_type == 'amplicon':
 								outputReads.append(((outputSequence, self.config.reverseComplement(outputSequence)), outputComment))
 								if len(outputSequence) != totalReadLength:
-										self.log.critical("Read length exception: Expected %d, got %d (read start: %d, sequence length: %d)", totalReadLength, len(outputSequence), startIndex, len(sequence))
+										self.log.critical("Read length exception: Expected %d, got %d (read start: %d, sequence length: %d, 5p UTR: %d, 3p UTR: %d)", totalReadLength, len(outputSequence), startIndex, len(sequence), _5UTRBases, _3UTRBases)
+										exit(-10)
 						else:
 								self.log.critical("simulateRead(): Invalid read type %s", read_type)
+								exit(-10)
 								
 				return outputReads # end simulateRead()
 
