@@ -28,3 +28,6 @@ v.1.2.0: 2018-5-08
 v.1.2.1: 2018-5-9
 * Clarified inner mate vs. insert length options and arguments
 * Documentation changes to specify locations of amplicon anchors
+
+v.1.3.0: 2018-5-14
+* Added support for reading quality strings from FASTQ files	
