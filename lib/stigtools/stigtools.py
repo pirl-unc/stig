@@ -53,7 +53,6 @@ import time
 #
 
 
-
 class tcrConfig:
 
 
@@ -78,7 +77,7 @@ class tcrConfig:
 		#				( 'TRGV8', 0.17 ),
 		#				( 'TRDV1', 0.21 ),
 
-		VDJprobability = [
+                VDJprobability = [
 				( 'TRBV20-1', 0.24 ),
 				( 'TRBV5-1', 0.125 ),
 				( 'TRBV29-1', 0.105 ),
@@ -1516,8 +1515,8 @@ class tcrRepertoire:
 										else:
 												read1Length = read_length_mean
 												read2Length = read_length_mean
-												innerMateLength = inner_mate_length_mean
-										readLength = (read1Length, insertLength, read2Length)
+												insertLength = insert_length_mean
+												readLength = insertLength
 
 								elif read_type == 'amplicon':
 										if read_length_sd > 0:
