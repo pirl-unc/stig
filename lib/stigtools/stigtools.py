@@ -1467,8 +1467,11 @@ class tcrRepertoire:
 		#
 		#
 		def simulateRead( self, count, space, distribution='gaussian', read_length_mean=25, read_length_sd=4, read_length_sd_cutoff=4, read_type = 'single', insert_length_mean=100, insert_length_sd=8, insert_length_sd_cutoff=4, amplicon_probe = 'GATCTCTGCTTCTGATGGCTCAAACAC' ):
-				self.log.debug("simulateRead() called...")
+				self.log.info("simulateRead() called...")
 
+				self.log.debug("count: %d, space: %s, distribution: %s, read type: %s, read length params: (%d, %d, %d), insert length params: (%d, %d, %d), amplicon probe: %s",
+											 count, space, distribution, read_type, read_length_mean, read_length_sd, read_length_sd_cutoff, insert_length_mean, insert_length_sd, insert_length_sd_cutoff, amplicon_probe)
+				
 				if space not in [ 'dna', 'rna' ]:
 						self.log.critical("simulateRead() argument 2 must be either 'dna' or 'rna'")
 						exit(-10)
@@ -1516,7 +1519,7 @@ class tcrRepertoire:
 												read1Length = read_length_mean
 												read2Length = read_length_mean
 												insertLength = insert_length_mean
-												readLength = insertLength
+										readLength = insertLength
 
 								elif read_type == 'amplicon':
 										if read_length_sd > 0:
