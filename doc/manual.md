@@ -1,7 +1,7 @@
 STIG: Synthetic TCR Informatics Generator
 =========================================
 
-Current for v1.3.0
+Current for v0.4.0
 
 Table of contents
 -----------------
@@ -34,7 +34,7 @@ STIG is a tool for creating artificial T-cell repertoires and producing simulate
 
 STIG utilizes a number of underlying assumptions when reading input and output data:
 
-1. Quality strings are Phred+33 (Sanger) format: (0,40) or (!, I), with I being highest quality
+1. Quality strings are Phred+33 (Illumina 1.8+) format: (0,41) or (!, J), with J being highest quality
 2. DNA and RNA inputs and outputs are 5' --> 3' direction, even when generating paired end reads or specififying amplicon probes
 
 
@@ -222,7 +222,7 @@ The majority of options fall into a few broad categories:
 ### 5.2 Degrading reads
 
 
-By default, STIG generates outputs with 100% accuracy against the underlying simulated TCR.  These reads are placed in the output fastq file(s) (by default 'stig.out.fastq', but can be overridden by the `--output` option).  n.b. that because the Phred+33 standard does not have a "0% chance of error" score, STIG will label these reads as of the highest quality available ('I', by Phred+33).
+By default, STIG generates outputs with 100% accuracy against the underlying simulated TCR.  These reads are placed in the output fastq file(s) (by default 'stig.out.fastq', but can be overridden by the `--output` option).  n.b. that because the Phred+33 standard does not have a "0% chance of error" score, STIG will label these reads as of the highest quality available ('J', by Phred+33 as implemented for Illumina 1.8+).
 
 It is frequently useful to have less-than-perfect quality for testing purposes, as this simulates real-world data.  STIG has several mechanisms for degrading the output to match certain criteria.  Degraded outputs are given the suffix `.degraded` in the fastq output filename.  All reads are labeled with a `readnum` value that corresponds between degraded and non-degraded fastq files, so one can see exactly what changes were made to the output based on the quality string.
 
@@ -242,7 +242,7 @@ This option is mutually exclusive to `--degrade-phred`, `--degrade-fastq` and `-
 
 #### 5.2.3 Degradation specified by a Phred+33 string
 
-Specified by the `--degrade-phred=PHRED` option.  This uses the error probabilites speficied by the input string and applies them to the generated reads, where the error probability of the nth read in an output is given by the nth quality score of `PHRED`.  If the generated read is longer than `PHRED`, then the last quality score in `PHRED` is used for the remaining bases.
+Specified by the `--degrade-phred=PHRED` option.  This uses the error probabilites speficied by the input string and applies them to the generated reads, where the error probability of the nth read in an output is given by the nth quality score of `PHRED`.  If the generated read is longer than `PHRED`, then the last quality score in `PHRED` is used for the remaining bases.  STIG uses the Illumina 1.8+ Phred+33 standard [i.e. each position must be one of: !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJ ]
 
 The `--degrade-variability` option can also be applied to introduce additional error.
 

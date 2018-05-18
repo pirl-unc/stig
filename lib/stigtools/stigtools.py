@@ -921,8 +921,8 @@ class tcrConfig:
 		# display - Boolean.  If True, then will print details of degradation to
     #           stdout.  Default is False.
     # [ phred ] are parameters for using a Phred score to determine the per-nucleotide error rate
-		# phred - Error rate probability per nucleotide.  This is Phred+33 format
-    #         (i.e. range [!, I] as acceptable characters)
+		# phred - Error rate probability per nucleotide.  This is Illiumina 1.9+ Phred+33 format
+    #         (i.e. range [!, J] as acceptable characters)
     #         If the read being degraded is longer than the given Phred string,
 		#         then the last base of the phred string is used for subsequent bases
     #         (e.g. "IIIIJJ55" is equivalent to "IIIIJJ5555555555555")
@@ -942,8 +942,8 @@ class tcrConfig:
 				if display == True:
 						print("Displaying degradation output with method %s, variability %0.5f" % (method, variability))
 				
-				phred33Reference = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHI"
-        #                   0 1234567890123456789012345678901234567890
+				phred33Reference = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJ"
+        #                   0 12345678901234567890123456789012345678901
 				if method not in ('phred', 'logistic'):
 						raise ValueError("Method must be either logistic or phred (given: \"%s\")" % method)
 						exit(-10)
@@ -1033,8 +1033,8 @@ class tcrConfig:
 						for line in input1:
 								lineNum += 1
 								if lineNum % 4 == 0:
-										if not re.match(r'^[!\"#\$%&\'\(\)\*\+,-./0123456789:;<=>?@ABCDEFGHI]+$', line):
-												self.log.warning("Invalid quality string on line %d: %s", lineNum, line)
+										if not re.match(r'^[!\"#\$%&\'\(\)\*\+,-./0123456789:;<=>?@ABCDEFGHIJ]+$', line):
+												self.log.warning("Invalid Phred+33 (Illumina 1.8+) quality string on line %d: %s", lineNum, line)
 										else:
 												qualities.append(line.strip("\n"))
 						if lineNum %4 != 0:
@@ -1097,7 +1097,7 @@ class tcr:
 						self.log = logging.getLogger(__name__)
 						self.log.setLevel(99) # A high level, effectively disabling logging
 				else:
-						raise ValueError("Log object for tcr must be a logging.Logger (or None)")
+						raise ValueError("Log object for tcr must be a logging.Logger (or None, to disable)")
 
 
 				
@@ -1272,7 +1272,7 @@ class tcrRepertoire:
 						self.log = logging.getLogger(__name__)
 						self.log.setLevel(99) # A high level, effectively disabling logging
 				else:
-						raise ValueError("Log object for tcrConfig must be a logging.Logger (or None)")
+						raise ValueError("Log object for tcrConfig must be a logging.Logger (or None, to disable)")
 
 
 				
