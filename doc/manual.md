@@ -34,7 +34,7 @@ STIG is a tool for creating artificial T-cell repertoires and producing simulate
 
 STIG utilizes a number of underlying assumptions when reading input and output data:
 
-1. Quality strings are Phred+33 (Sanger) format: (0,40) or (!, I), with I being highest quality
+1. Quality strings are Phred+33 (Illumina 1.8+) format: (0,41) or (!, J), with J being highest quality
 2. DNA and RNA inputs and outputs are 5' --> 3' direction, even when generating paired end reads or specififying amplicon probes
 
 

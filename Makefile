@@ -33,7 +33,7 @@ DEGRADE_LOGISTIC_OPTS=\
 --degrade-logistic=
 
 DEGRADE_PHRED_OPTS=\
---degrade-phred='55555555555555555555' \
+--degrade-phred='5555555IJ5555555555555' \
 --degrade-variability=0.5
 
 DEGRADE_DUAL_FASTQ_OPTS=\
@@ -65,24 +65,24 @@ degrade_fastq: devel.population.bin
 	./lib/stig --read-type=amplicon --degrade-fastq-rand=./data/test_degrade.fastq,./data/test_degrade.fastq $(LOAD_DEVEL_OPTS) $(BASE_OPTS)
 
 degrade_phred: devel.population.bin
-	./lib/stig --log-level=debug $(LOAD_DEVEL_OPTS) $(DEGRADE_PHRED_OPTS) $(BASE_OPTS)
+	./lib/stig $(LOAD_DEVEL_OPTS) $(DEGRADE_PHRED_OPTS) $(BASE_OPTS)
 
 devel.population.bin:
 	./lib/stig --output=devel --repertoire-size=100 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
 
 amplicon: devel.population.bin
-	./lib/stig --amplicon-probe=GATCTCTGCTTCTGATGGCTCAAACAC --log-level=debug --output=devel --load-population=devel.population.bin $(DEGRADE_PHRED_OPTS) $(AMPLICON_OPTS) $(BASE_OPTS)
-	./lib/stig --amplicon-probe=AGAATCCTTACTTTGTGACACATTTGTTTGAGA --log-level=debug --output=devel --load-population=devel.population.bin $(DEGRADE_PHRED_OPTS) $(AMPLICON_OPTS) $(BASE_OPTS)
+	./lib/stig --amplicon-probe=GATCTCTGCTTCTGATGGCTCAAACAC --output=devel --load-population=devel.population.bin $(DEGRADE_PHRED_OPTS) $(AMPLICON_OPTS) $(BASE_OPTS)
+	./lib/stig --amplicon-probe=AGAATCCTTACTTTGTGACACATTTGTTTGAGA --output=devel --load-population=devel.population.bin $(DEGRADE_PHRED_OPTS) $(AMPLICON_OPTS) $(BASE_OPTS)
 
 
 # Test targets
 test: test_help test_degrade test_amplicon
-test_degrade: display_degradation degrade_fastq degrade_dual_fastq degrade_fastqrand degrade_dual_fastqrand
+test_degrade: display_degradation degrade_fastq
 test_amplicon: amplicon
 
 test_help:
-	./lib/stig --help
+	./lib/stig --help 2>&1 >/dev/null
 
 display_degradation:
-	./lib/stig --degrade-phred='555555555555' --degrade-variability=0.5 --display-degradation
+	./lib/stig --degrade-phred='555555555555' --degrade-variability=0.5 --display-degradation > /dev/null
 

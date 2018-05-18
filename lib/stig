@@ -98,7 +98,7 @@ parserGroup2 = parser.add_mutually_exclusive_group()
 parserGroup2.add_argument("--degrade-logistic", default=None, metavar="B:L:k:mid",
 													help='Simulate non-optimal quality using the logistic (sigmoid) function.  Takes an argument formatted as \'B:L:k:mid\'.  B - Base error rate probability.  L - Maximum error rate. k - Steepness factor. mid - Midpoint, this is the base position where error rate is equal to 1/2 of L. Default is off.  This option is mutually exclusive to --degrade-phred, --degrade-fastq, and --degrade-fastq-random.  See: --degrade-variability')
 parserGroup2.add_argument("--degrade-phred", metavar="PHRED_STRING", default=None,
-													help='Simulate non-optimal quality using a Phred+33 string to specify quality on a per-nucleotide basis.  If a generated read is longer than the given phred string, then the last character in the phred string is used.  Default is off.  This option is mutually exclusive to --degrade-logistic, --degrade-fastq and --degrade-fastq-random.  See: --degrade-variability')
+													help='Simulate non-optimal quality using a Phred+33 (Illumina 1.8+) string to specify quality on a per-nucleotide basis.  If a generated read is longer than the given phred string, then the last character in the phred string is used.  Default is off.  This option is mutually exclusive to --degrade-logistic, --degrade-fastq and --degrade-fastq-random.  See: --degrade-variability')
 parserGroup2.add_argument("--degrade-fastq", metavar="FILE[,FILE2]", default=None,
 													help='Simulate non-optimal quality by degrading reads based on Phred+33 quality strings from the given fastq FILE, or files FILE1,FILE2. Two files required when generating paired or amplicon reads.  Output quality strings are assigned from FILE in a stepwise fashion')
 parserGroup2.add_argument("--degrade-fastq-random", metavar='FILE[,FILE2]', default=None,
@@ -149,7 +149,7 @@ if ( args.degrade_logistic is not None or
 						log.critical("Invalid string for --degrade-logistic: \"%s\".  Valid example: 0.005:0.2:0.25:15", args.degrade_logistic)
 						exit(-1)
 		elif args.degrade_phred is not None:
-				if re.match(r'^[!\"#\$%&\'\(\)\*\+,-./0123456789:;<=>?@ABCDEFGHI]+$', args.degrade_phred):
+				if re.match(r'^[!\"#\$%&\'\(\)\*\+,-./0123456789:;<=>?@ABCDEFGHIJ]+$', args.degrade_phred):
 						log.info("Using Phred string for degradation")
 						method = 'phred'
 						matches = re.match('^(.+)$', args.degrade_phred)
@@ -273,7 +273,7 @@ if args.sequence_count > 0:
 				with open(outputFilename, 'w') as fp:
 						for readTuple in outputSequences:
 								(read, comment) = readTuple
-								qualStr = 'I'*len(read)
+								qualStr = 'J'*len(read)
 								fp.write("%s\n" % (comment))
 								fp.write("%s\n" % (read))
 								fp.write("+\n")
@@ -286,8 +286,8 @@ if args.sequence_count > 0:
 								for readPairTuple in outputSequences:
 										readPair, comment = readPairTuple
 										read1, read2 = readPair
-										qualStr1 = 'I'*len(read1)
-										qualStr2 = 'I'*len(read2)
+										qualStr1 = 'J'*len(read1)
+										qualStr2 = 'J'*len(read2)
 										
 										output1.write("%s\n" % comment)
 										output1.write("%s\n" % read1)
