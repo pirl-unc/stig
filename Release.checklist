@@ -19,12 +19,14 @@ MERGE RELEASE TO develop:
 
 REMOVALS AND master MERGE:
 [] - git checkout release-x.y.z
-[] - branch.info deleted
-[] - Release.checklist deleted
-[] - git commit changes
+[] - git rm branch.info
+[] - git rm Release.checklist
+[] - git rm Makefile
+[] - git commit -a -m "File removal in preparation for release"
 [] - git checkout master
 [] - git merge --no-ff release-x.y.z
 
 TAG AND DELETE RELEASE BRANCH
 [] - git tag x.y.z
+[] - git push origin --tags
 [] - git branch -d release-x.y.z
