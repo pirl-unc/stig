@@ -9,7 +9,7 @@ STIG is a tool for creating artificial T-cell repertoires and producing simulate
 
 ## Getting started
 ### Prerequisites
-A working Python 2 installation.  This has been been tested with 2.7.12 and 2.7.5.  No additional Python libraries are required: STIG currently uses only functions from the Python Standard Library, plus those defined it its own libraries.
+A working Python 2 installation.  This has been been tested with 2.7.12 and 2.7.5.  The python package 'numpy' is required, as this generates numeric distributions required for making repertoires.
 
 #### Reference chromosomes
 
