@@ -39,3 +39,8 @@
 * Changed default Phred string format to Illumina 1.8+ Phred+33
 	- Deprecated use of Sanger Phred+33 strings, as output FASTQs are now Illumina 1.8+ format
 	- Documentation updated to clarify quality strings and provide matching string to identify problems with user data
+
+## STIG [0.4.1]: 2018-5-21
+* Fixed bug where degraded Phred output could not include up to 'J'
+* Added warning message when generating reads with mean length > mean insert length
+* Updated documentation to reflect use of numpy package
