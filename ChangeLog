@@ -44,3 +44,6 @@
 * Fixed bug where degraded Phred output could not include up to 'J'
 * Added warning message when generating reads with mean length > mean insert length
 * Updated documentation to reflect use of numpy package
+
+## STIG [0.4.2]: 2018-5-21
+* Fixed Phred+33 output to perfectly match Phred+33 degraded inputs
