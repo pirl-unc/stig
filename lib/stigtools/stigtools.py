@@ -77,7 +77,7 @@ class tcrConfig:
 		#				( 'TRGV8', 0.17 ),
 		#				( 'TRDV1', 0.21 ),
 
-                VDJprobability = [
+		VDJprobability = [
 				( 'TRBV20-1', 0.24 ),
 				( 'TRBV5-1', 0.125 ),
 				( 'TRBV29-1', 0.105 ),
@@ -91,7 +91,6 @@ class tcrConfig:
 				('TRBV20-1', 'TRBJ1-5', 0.10 ),
 				('TRBV20-1', 'TRBJ2-3', 0.09 ),
 				('TRBV20-1', 'TRBJ2-2', 0.08 ),
-
 		]
 
 		# Define our probabilities for chewback and NT addition at VDJ junction sites
@@ -1000,14 +999,15 @@ class tcrConfig:
 										
 								phredScore = int(-10 * math.log10(errorRate))
 								if phredScore > 40:
-										phredScore = 40
+										phredScore = 41
 										
 								qualStr += phred33Reference[phredScore]
 
 								if display is True:
 										print("Position %02d: error rate %0.4f, Phred+33 %s" % (i, errorRate, phred33Reference[phredScore]))
 
-								
+						self.log.debug("QUALITY GIVEN:\n%s\nRETURNING:\n%s\n", phred, qualStr)
+						exit(10)
 						fastqOutput = "%s\n%s\n+\n%s\n" % (ident, readStr, qualStr)
 						return fastqOutput
 				else:

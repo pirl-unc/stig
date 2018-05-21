@@ -217,6 +217,11 @@ if( args.chr7_filename  is None or
 		exit(-10)
 
 		
+# Throw some warnings based on unusual command-line options
+if( args.read_length_mean > args.insert_length_mean ):
+		log.warning("Insert length mean is less than read length mean, this may significantly increase read generation time.  Please ensure this is intentional.")
+
+		
 # Create our configuration object
 my_configuration = stigtools.tcrConfig(log=log.getChild('tcrConfig'))
 my_configuration.readTCRConfig(args.tcell_data)
