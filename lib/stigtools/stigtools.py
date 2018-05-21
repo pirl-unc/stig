@@ -957,8 +957,8 @@ class tcrConfig:
 										errorRate += random.random() * 2 * errorRate * variability - errorRate * variability
 
 								phredScore = int(-10 * math.log(errorRate))
-								if phredScore > 40:
-										phredScore = 40
+								if phredScore > 41:
+										phredScore = 41
 										if random.random() < errorRate:
 												readStr += self.getRandomNucleotides(1)
 										else:
@@ -997,8 +997,8 @@ class tcrConfig:
 								else:
 										readStr += read[i]
 										
-								phredScore = int(-10 * math.log10(errorRate))
-								if phredScore > 40:
+								phredScore = int(round(-10 * math.log10(errorRate)))
+								if phredScore > 41:
 										phredScore = 41
 										
 								qualStr += phred33Reference[phredScore]
@@ -1006,8 +1006,6 @@ class tcrConfig:
 								if display is True:
 										print("Position %02d: error rate %0.4f, Phred+33 %s" % (i, errorRate, phred33Reference[phredScore]))
 
-						self.log.debug("QUALITY GIVEN:\n%s\nRETURNING:\n%s\n", phred, qualStr)
-						exit(10)
 						fastqOutput = "%s\n%s\n+\n%s\n" % (ident, readStr, qualStr)
 						return fastqOutput
 				else:
