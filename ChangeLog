@@ -47,3 +47,7 @@
 
 ## STIG [0.4.2]: 2018-5-21
 * Fixed Phred+33 output to perfectly match Phred+33 degraded inputs
+
+## STIG [0.4.3]: 2018-5-22
+* Changed extension on paired-end/amplicon fastq to match software conventions
+* Changed degraded fastq comment headers to pass through comments from non-degraded fastq
