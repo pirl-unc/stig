@@ -284,8 +284,8 @@ if args.sequence_count > 0:
 								fp.write("+\n")
 								fp.write("%s\n" % qualStr)
 		elif args.read_type == 'paired' or args.read_type == 'amplicon':
-				output1Filename = args.output + '1.fastq'
-				output2Filename = args.output + '2.fastq'
+				output1Filename = args.output + '_R1.fastq'
+				output2Filename = args.output + '_R2.fastq'
 				with open(output1Filename, 'w') as output1:
 						with open(output2Filename, 'w') as output2:
 								for readPairTuple in outputSequences:
@@ -358,19 +358,19 @@ if args.sequence_count > 0:
 								i = 0
 								for readTuple in outputSequences:
 										read, comment = readTuple
-										ident = "@STIG_DEGRADED:readnum=%d" % (i)
+										ident = comment.replace('@STIG', '@STIG_DEGRADED')
 										fp.write(my_configuration.getDegradedFastq(read, method, ident, variability=args.degrade_variability, phred=phred1[i % len(phred1)], baseError=baseError, L=L, k=k, midpoint=midpoint))
 										i += 1
 				elif args.read_type == 'paired' or args.read_type == 'amplicon':
-						output1Filename = args.output + '1.degraded.fastq'
-						output2Filename = args.output + '2.degraded.fastq'
+						output1Filename = args.output + '_R1.degraded.fastq'
+						output2Filename = args.output + '_R2.degraded.fastq'
 						with open(output1Filename, 'w') as output1:
 								with open(output2Filename, 'w') as output2:
 										i = 0
 										for readPairTuple in outputSequences:
 												readPair, comment = readPairTuple
 												read1, read2 = readPair
-												ident = "@STIG_DEGRADED:readnum=%d" % (i)
+												ident = comment.replace('@STIG', '@STIG_DEGRADED')
 												output1.write(my_configuration.getDegradedFastq(read1, method, ident, variability=args.degrade_variability, phred=phred1[i % len(phred2)], baseError=baseError, L=L, k=k, midpoint=midpoint))
 												output2.write(my_configuration.getDegradedFastq(read2, method, ident, variability=args.degrade_variability, phred=phred2[i % len(phred1)], baseError=baseError, L=L, k=k, midpoint=midpoint))
 												i += 1

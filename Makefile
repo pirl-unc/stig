@@ -86,3 +86,5 @@ test_help:
 display_degradation:
 	./lib/stig --degrade-phred='555555555555' --degrade-variability=0.5 --display-degradation > /dev/null
 
+clean:
+	rm -f stig.out*.fastq devel*.fastq devel.statistics.csv devel.population.bin
