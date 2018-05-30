@@ -1,0 +1,53 @@
+## STIG [0.0.0]: 2017-11-30
+* Initial release
+
+## STIG [0.0.1]: 2018-4-8
+* Removed extra nucleotides in allele files
+
+## STIG [0.0.2]: 2018-4-19
+* Fixed issue with read lengths when reads fell into 3' UTR
+
+## STIG [0.0.3]: 2018-4-23
+* Updated filenames to conform to naming scheme
+* License notice added
+* Manual and README with multiple additions and corrections
+
+## STIG [0.1.0]: 2018-4-27
+* Added more detailed read information to fastq comments
+* Improved code documentation
+* Added clone ID to statistics file
+
+## STIG [0.1.1]: 2018-5-08
+* Adjusted logging levels of debugging text to 'debug' as appropriate
+* Updated Makefile
+
+## STIG [0.2.0]: 2018-5-08
+* Added support for amplicon sequencing and supporting documentation
+* Fixed issue where empty files created with --sequence-count=0
+
+## STIG [0.2.1]: 2018-5-9
+* Clarified inner mate vs. insert length options and arguments
+* Documentation changes to specify locations of amplicon anchors
+
+## STIG [0.3.0]: 2018-5-14
+* Added support for reading quality strings from FASTQ files
+
+## STIG [0.4.0]: 2018-5-17
+* Removed Makefile from master branch
+* Version numbering adjusted to prepare for public release (pre-1.0)
+* ChangeLog moved to Markdown format
+* Changed default Phred string format to Illumina 1.8+ Phred+33
+	- Deprecated use of Sanger Phred+33 strings, as output FASTQs are now Illumina 1.8+ format
+	- Documentation updated to clarify quality strings and provide matching string to identify problems with user data
+
+## STIG [0.4.1]: 2018-5-21
+* Fixed bug where degraded Phred output could not include up to 'J'
+* Added warning message when generating reads with mean length > mean insert length
+* Updated documentation to reflect use of numpy package
+
+## STIG [0.4.2]: 2018-5-21
+* Fixed Phred+33 output to perfectly match Phred+33 degraded inputs
+
+## STIG [0.4.3]: 2018-5-22
+* Changed extension on paired-end/amplicon fastq to match software conventions
+* Changed degraded fastq comment headers to pass through comments from non-degraded fastq

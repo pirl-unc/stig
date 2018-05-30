@@ -53,7 +53,6 @@ import time
 #
 
 
-
 class tcrConfig:
 
 
@@ -92,7 +91,6 @@ class tcrConfig:
 				('TRBV20-1', 'TRBJ1-5', 0.10 ),
 				('TRBV20-1', 'TRBJ2-3', 0.09 ),
 				('TRBV20-1', 'TRBJ2-2', 0.08 ),
-
 		]
 
 		# Define our probabilities for chewback and NT addition at VDJ junction sites
@@ -111,13 +109,13 @@ class tcrConfig:
 		#      Genome Research, 2009. https://doi.org/10.1101/gr.092924.109
 		#
 		junctionProbability = {
-				'Vchewback': [ 0.2384, 0.1629, 0.1008, 0.1159, 0.1359, 0.1044, 0.0743, 0.0391, 0.0152, 0.0061, 0.0043, 0.0022, 0.0004, 0.000044],
-				'VJaddition': [0.1625, 0.1179, 0.1466, 0.1403, 0.1330, 0.0817, 0.0635, 0.048, 0.0357, 0.0233, 0.0184, 0.0073, 0.0073, 0.0071, 0.0033, 0.0013, 0.0009, 0.0005, 0.0002, 0.0004, 0.0002, 0, 0.0009],
-				'VDaddition': [0.1625, 0.1179, 0.1466, 0.1403, 0.1330, 0.0817, 0.0635, 0.048, 0.0357, 0.0233, 0.0184, 0.0073, 0.0073, 0.0071, 0.0033, 0.0013, 0.0009, 0.0005, 0.0002, 0.0004, 0.0002, 0, 0.0009],
+				'Vchewback' : [ 0.2384, 0.1629, 0.1008, 0.1159, 0.1359, 0.1044, 0.0743, 0.0391, 0.0152, 0.0061, 0.0043, 0.0022, 0.0004, 0.000044 ],
+				'VJaddition': [ 0.1625, 0.1179, 0.1466, 0.1403, 0.1330, 0.0817, 0.0635, 0.048, 0.0357, 0.0233, 0.0184, 0.0073, 0.0073, 0.0071, 0.0033, 0.0013, 0.0009, 0.0005, 0.0002, 0.0004, 0.0002, 0, 0.0009 ],
+				'VDaddition': [ 0.1625, 0.1179, 0.1466, 0.1403, 0.1330, 0.0817, 0.0635, 0.048, 0.0357, 0.0233, 0.0184, 0.0073, 0.0073, 0.0071, 0.0033, 0.0013, 0.0009, 0.0005, 0.0002, 0.0004, 0.0002, 0, 0.0009 ],
 				'D5chewback': [ 0.3231, 0.1683, 0.1299, 0.0746, 0.1077, 0.0555, 0.0504, 0.0444, 0.0462 ],
 				'D3chewback': [ 0.2401, 0.1621, 0.2431, 0.2072, 0.0631, 0.0355, 0.0202, 0.0133, 0.0153 ],
 				'DJaddition': [ 0.1246, 0.1035, 0.1457, 0.1466, 0.1257, 0.0975, 0.0793, 0.0389, 0.0369, 0.0227, 0.0133, 0.0164, 0.0076, 0.0135, 0.0053, 0.0060, 0.0045, 0.0045, 0.0029, 0.0020, 0.0009, 0.0005, 0.0002 ],
-				'Jchewback': [ 0.1197, 0.0867, 0.1037, 0.0930, 0.1253, 0.1143, 0.0897, 0.0734, 0.0548, 0.0327, 0.0207, 0.0131, 0.0101, 0.0095, 0.0072, 0.0139, 0.0059, 0.0077, 0.0065, 0.0032, 0.0027, 0.0019, 0.0013, 0.0008, 0.0005 ],
+				'Jchewback' : [ 0.1197, 0.0867, 0.1037, 0.0930, 0.1253, 0.1143, 0.0897, 0.0734, 0.0548, 0.0327, 0.0207, 0.0131, 0.0101, 0.0095, 0.0072, 0.0139, 0.0059, 0.0077, 0.0065, 0.0032, 0.0027, 0.0019, 0.0013, 0.0008, 0.0005 ],
 		}
 				
 		def __init__( self, log=None ):
@@ -386,7 +384,7 @@ class tcrConfig:
 				
 				with open(filename) as fp:
 						self.log.info("Bytes requested %d, seek %d, offset %d, reading +%d",
-													end-start,
+													end-start + 1,
 													(end-start+int(math.floor(start/lineLength)) -1),
 													offset,
 													int(math.floor((end-start)/lineLength)))
@@ -396,14 +394,25 @@ class tcrConfig:
 						data = data.replace("\n", '').upper()
 						data = data[:(end - start + 1)]
 						if strand == 'reverse':
-								data = data.translate(string.maketrans('CATG', 'GTAC'))
-								data = data[::-1]
+								data = self.reverseComplement(data)
 
 				#self.log.debug("Read: %s (%db)", data, len(data))
 				return data
 
-
-				
+		# reverseComplement - Return the reverse complement of a nucleotide string
+    # 
+    # Arguments:
+    # value - A nucleotide string (CTAGU)
+    # 
+    # Returns:
+    # A string with complementary DNA nucleotides (CTUAG -> GAATC), reversed from the input value
+    # 
+		def reverseComplement(self, value):
+				value = value.translate(string.maketrans('CTUAG', 'GAATC'))
+				value = value[::-1]
+				return value
+		
+		
 		# chooseRandomSegment - Pick an (appropriately) random V, D, J or C segment for a provided receptor type
 		#
 		# Arguments:
@@ -479,7 +488,7 @@ class tcrConfig:
 												segmentChoices.append(i)
 												
 				# Throw an error here if there are no possible join candidates.
-				# This should never happen
+				# This should never happen if our input probabilities are correctly given
 				if len(segmentChoices) == 0:
 						self.log.critical("No possible segments to join")
 						exit(-10)
@@ -544,6 +553,7 @@ class tcrConfig:
 								self.log.info("Choosing %d(%s) allele %s", segmentIndex, self.receptorSegment[segmentIndex]['gene'], allele)
 								return (segmentIndex, allele)
 
+				# We should always return before here
 				raise ValueError("We fell through the rabbit hole")
 
 
@@ -627,21 +637,20 @@ class tcrConfig:
 				# Ensure string is in-frame first...
 				matches = re.match('^ATG((?:[CTAG]{3})+)$', rnaSequence)
 				if matches is None:
-						self.log.critical("Invalid CDR3: Frame shifted (%d)", len(rnaSequence)%3)
+						self.log.info("Invalid CDR3: Frame shifted (%d)", len(rnaSequence)%3)
 						return None
-				else:
-						self.log.critical("NOT Frame shifted")
+				
 				# Check for early stop codons
 				matches = re.match('^((?:[CTAG]{3})*)(TAA|TAG|TGA)((?:[CTAG]{3})+)$', rnaSequence)
 				if matches is not None:
-						self.log.critical("Invalid CDR3: Stop codon found in sequence...")
-						self.log.critical("%s", '.'.join(matches.groups()))
-						self.log.critical("%s", '_'.join([vSegmentRNA, dSegmentRNA, jSegmentRNA, cSegmentRNA]))
+						self.log.info("Invalid CDR3: Stop codon found in sequence...")
+						self.log.debug("%s", '.'.join(matches.groups()))
+						self.log.debug("%s", '_'.join([vSegmentRNA, dSegmentRNA, jSegmentRNA, cSegmentRNA]))
 						return None
 
 				# Continue only if our CDR3 sequence is valid
 				if not self.validateCDR3Sequence(rnaSequence):
-						self.log.critical("Invalid CDR3: Amino acid sequence incorrect")
+						self.log.info("Invalid CDR3: Amino acid sequence incorrect")
 						return None
 										
 				# Calculate the location of our DNA/RNA 5' and 3' UTR areas
@@ -911,8 +920,8 @@ class tcrConfig:
 		# display - Boolean.  If True, then will print details of degradation to
     #           stdout.  Default is False.
     # [ phred ] are parameters for using a Phred score to determine the per-nucleotide error rate
-		# phred - Error rate probability per nucleotide.  This is Phred+33 format
-    #         (i.e. range [!, I] as acceptable characters)
+		# phred - Error rate probability per nucleotide.  This is Illiumina 1.9+ Phred+33 format
+    #         (i.e. range [!, J] as acceptable characters)
     #         If the read being degraded is longer than the given Phred string,
 		#         then the last base of the phred string is used for subsequent bases
     #         (e.g. "IIIIJJ55" is equivalent to "IIIIJJ5555555555555")
@@ -932,10 +941,10 @@ class tcrConfig:
 				if display == True:
 						print("Displaying degradation output with method %s, variability %0.5f" % (method, variability))
 				
-				phred33Reference = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHI"
-        #                   0 1234567890123456789012345678901234567890
+				phred33Reference = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJ"
+        #                   0 12345678901234567890123456789012345678901
 				if method not in ('phred', 'logistic'):
-						raise ValueError("Method %s must be either logistic or phred" % method)
+						raise ValueError("Method must be either logistic or phred (given: \"%s\")" % method)
 						exit(-10)
 
 				if method == 'logistic':
@@ -948,8 +957,8 @@ class tcrConfig:
 										errorRate += random.random() * 2 * errorRate * variability - errorRate * variability
 
 								phredScore = int(-10 * math.log(errorRate))
-								if phredScore > 40:
-										phredScore = 40
+								if phredScore > 41:
+										phredScore = 41
 										if random.random() < errorRate:
 												readStr += self.getRandomNucleotides(1)
 										else:
@@ -988,23 +997,48 @@ class tcrConfig:
 								else:
 										readStr += read[i]
 										
-								phredScore = int(-10 * math.log10(errorRate))
-								if phredScore > 40:
-										phredScore = 40
+								phredScore = int(round(-10 * math.log10(errorRate)))
+								if phredScore > 41:
+										phredScore = 41
 										
 								qualStr += phred33Reference[phredScore]
 
 								if display is True:
 										print("Position %02d: error rate %0.4f, Phred+33 %s" % (i, errorRate, phred33Reference[phredScore]))
 
-								
 						fastqOutput = "%s\n%s\n+\n%s\n" % (ident, readStr, qualStr)
 						return fastqOutput
 				else:
 						raise ValueError("Invalid method \"%s\". We should not be here" % method)
 
 
-
+		# getFastqQuality - Read all quality strings from a FASTQ-formatted file
+		# 
+		# Arguments:
+		# 
+		# filename - Filename of the file to read
+		# 
+		# Return value:
+		# 
+		# An array of strings containing the quality strings from the file
+		# 
+		# 
+		def getFastqQualities(self, filename ):
+				self.log.info("getFastqQualities() called...")
+				qualities = []
+				with open(filename, 'r') as input1:
+						lineNum = 0
+						for line in input1:
+								lineNum += 1
+								if lineNum % 4 == 0:
+										if not re.match(r'^[!\"#\$%&\'\(\)\*\+,-./0123456789:;<=>?@ABCDEFGHIJ]+$', line):
+												self.log.warning("Invalid Phred+33 (Illumina 1.8+) quality string on line %d: %s", lineNum, line)
+										else:
+												qualities.append(line.strip("\n"))
+						if lineNum %4 != 0:
+								self.log.warning("Unexpected number of lines (should be divisible by 4) in fastq formatted file %s: %d", filename, lineNum)
+								
+				return qualities
 
 
 				
@@ -1061,7 +1095,7 @@ class tcr:
 						self.log = logging.getLogger(__name__)
 						self.log.setLevel(99) # A high level, effectively disabling logging
 				else:
-						raise ValueError("Log object for tcr must be a logging.Logger (or None)")
+						raise ValueError("Log object for tcr must be a logging.Logger (or None, to disable)")
 
 
 				
@@ -1159,20 +1193,60 @@ class tcr:
 						
 class tcrRepertoire:
 
-		def __init__( self, config, size, log=None, AB_frequency = 0.9 ):
+		def __init__( self, config, size, log=None, AB_frequency = 0.9, uniqueCDR3 = False, uniqueChain = False, uniqueTCR = False ):
 				if( isinstance(config, tcrConfig) ):
 						self.config = config
 				else:
 						raise ValueError("config object must be a tcrConfig")
 
 				self.setLog(log)
-				
-				self.log.debug("Initializing repertoire of %d receptors", size)
+
+				self.log.info("tcrRepertoire()::__init__ called with size %d, AB ratio %f, unique chains %s, unique CDR3 %s", size, AB_frequency, uniqueChain, uniqueTCR)
 			 	self.AB_frequency = AB_frequency
 				self.repertoire = [None] * size
 				for i in range(0, size):
+						self.log.debug("Generating repertoire bucket %d of %d", i + 1, size)
 						self.repertoire[i] = tcr(self.AB_frequency, self.config, log=self.log.getChild('tcr'))
-						self.repertoire[i].randomize()
+
+						if uniqueCDR3 == True: # Ensure unique CDR3
+								unique = False
+								while unique == False:
+										self.repertoire[i].randomize()
+										for j in range(0, i):
+												if ( self.config.getCDR3Sequence(self.repertoire[i].RNA1[3]) == self.config.getCDR3Sequence(self.repertoire[j].RNA1[3]) or
+														 self.config.getCDR3Sequence(self.repertoire[i].RNA2[3]) == self.config.getCDR3Sequence(self.repertoire[j].RNA2[3]) ) :
+														self.log.debug("Duplicate CDR3 at position %d", j)
+														break
+										else:
+												unique = True
+												
+						elif uniqueChain == True: # Ensure unique chains
+								unique = False
+								while unique == False:
+										self.repertoire[i].randomize()
+										for j in range(0, i):
+												if ( self.repertoire[i].RNA1 == self.repertoire[j].RNA1 or
+														 self.repertoire[i].RNA2 == self.repertoire[j].RNA2 ) :														
+														self.log.debug("Duplicate chain at position %d", j)
+														break
+										else:
+												unique = True
+
+						elif uniqueTCR == True: # Ensure unique TCR
+								unique = False
+								while unique == False:
+										self.repertoire[i].randomize()
+										for j in range(0, i):
+												if ( self.repertoire[i].RNA1 == self.repertoire[j].RNA1 and
+														 self.repertoire[i].RNA2 == self.repertoire[j].RNA2 ) :
+														self.log.debug("Duplicate CDR3 at position %d", j)
+														break
+										else:
+												unique = True
+						else: # No uniqueness constraints
+								self.repertoire[i].randomize()
+								
+						self.log.debug("Finished generating repertoire bucket %d of %d", i + 1, size)
 				self.population = [0] * size
 				self.population_size = 0
 				self.distribution_options = ('flat', 'equal', 'gaussian', 'chisquare')
@@ -1196,7 +1270,7 @@ class tcrRepertoire:
 						self.log = logging.getLogger(__name__)
 						self.log.setLevel(99) # A high level, effectively disabling logging
 				else:
-						raise ValueError("Log object for tcrConfig must be a logging.Logger (or None)")
+						raise ValueError("Log object for tcrConfig must be a logging.Logger (or None, to disable)")
 
 
 				
@@ -1265,8 +1339,9 @@ class tcrRepertoire:
 		#                   chisquare: Chi Square distribution.  Takes cs_k and
 		#                   cs_cutoff arguments to describe k value and the largest
 		#                   x-axis value to include in the distribution, respectively
-		# 
-				
+		#
+		# Returns: Nothing
+		#		
 		def populate( self, population_size, distribution, g_cutoff=3, cs_k=2, cs_cutoff=8 ):
 				self.log.info("populate() called...")
 				self.log.debug("Arguments: %s", (population_size, distribution, g_cutoff, cs_k, cs_cutoff))
@@ -1329,23 +1404,84 @@ class tcrRepertoire:
 
 
 				
-		# Notes:
-		# For fixed-length reads or inner mate distances, set the standard deviation to zero and the mean to whatever you'd like
-		
-		def simulateRead( self, count, space, distribution='gaussian', read_length_mean=25, read_length_sd=4, read_length_sd_cutoff=4, paired_end=False, inner_mate_length_mean=100, inner_mate_length_sd=8, inner_mate_length_sd_cutoff=4):
-				self.log.debug("simulateRead() called...")
+		# simulateRead - Generate reads from a repertoire
+		#
+		# Arguments:
+		# count        - Integer. The total # of reads requested
+		# space        - String. The type of sequencing read to generate, 'dna' or
+		#                'rna'
+		#
+		# Optional arguments:
+		# read_type    - String. 'paired' for paired-end reads, 'single' for
+		#                single, or 'amplicon' for amplicon data
+		#                Default is 'single'
+		# distribution - String.  The distribution of the read and inner mate
+		#                lengths.  Only option supported currently is 'gaussian'
+		# read_length_mean      - Integer.  The mean read length to generate.
+		# read_length_sd        - Integer. The standard deviation of the
+		#                         distribution of lengths of generated reads.
+		#                         Setting this to zero will produce fix-length
+		#                         reads of read_length_mean length.  Default
+		#                         is 4.
+		# read_length_sd_cutoff - Integer.  The number of standard deviations
+		#                         from the mean read length to include in generated
+		#                         reads.
+		# insert_length_mean          - Integer.  The mean length of the inner mate
+		#                               portion of paired end reads.  Used only
+		#                               when generating paired end reads.  Setting
+		#                               this to zero will produced fix-length
+		#                               inner mate portions at the mean. Default
+		#                               is 100 nucleotides.
+		# insert_length_sd            - Integer.  The standard deviation of the
+		#                               distribution of the length of the inner
+		#                               mate portion of generated reads.  Default
+		#                               is 8.
+		#
+		# insert_length_sd_cutoff     - Integer.  The number of standard
+		#                               deviations from the mean inner mate length
+		#                               to include in generated reads.
+		#
+		# amplicon_probe - String. Target sequence to find in the sense/antisense
+		#                  DNA or RNA data.  This is interpreted as a 5' -> 3'
+		#                  string with reads be generated in a 3' direction.
+		#                  So if your amplicon probe falls in the C-region,
+		#                  it should be reverse complement in order for reads
+		#                  to be generated 'toward' the CDR3 portion
+		#                  Default is GATCTCTGCTTCTGATGGCTCAAACAC, which
+		#                  anchors in Exon 1 of the beta chain C-region on the
+		#                  reverse strand.
+		#
+		# Returns:
+		#
+		# A single 2-tuple (reads, comments), where:
+		#
+		# reads - If single-end reads, this is an array of strings.  If paired-end
+		#         reads, this is an array of 2-tuples of (read1, read2)
+		#         with types (string, string).
+		#
+		# comments - An array of strings.  These are descriptive strings that
+		#            provide information regarding the reads in the 'reads'
+		#            array, where comments[n] describes reads[n].
+		#
+		#
+		def simulateRead( self, count, space, distribution='gaussian', read_length_mean=25, read_length_sd=4, read_length_sd_cutoff=4, read_type = 'single', insert_length_mean=100, insert_length_sd=8, insert_length_sd_cutoff=4, amplicon_probe = 'GATCTCTGCTTCTGATGGCTCAAACAC' ):
+				self.log.info("simulateRead() called...")
 
+				self.log.debug("count: %d, space: %s, distribution: %s, read type: %s, read length params: (%d, %d, %d), insert length params: (%d, %d, %d), amplicon probe: %s",
+											 count, space, distribution, read_type, read_length_mean, read_length_sd, read_length_sd_cutoff, insert_length_mean, insert_length_sd, insert_length_sd_cutoff, amplicon_probe)
+				
 				if space not in [ 'dna', 'rna' ]:
 						self.log.critical("simulateRead() argument 2 must be either 'dna' or 'rna'")
 						exit(-10)
 
 				outputReads = []
 						
-				# Choose an individual to read from (a TCR chain [e.g. alpha or beta] is chosen later)
 				readIndividual = None
-				for i in range(0, count):
+				while len(outputReads) < count:
+						
+						# Choose an individual cell to read from (a TCR chain [e.g. alpha or beta] is chosen later)
 						randIndividual = random.random() * self.population_size
-						self.log.debug("Read from individual #%d (of %s)", randIndividual, self.population_size)
+						self.log.debug("Starting to generate new read from individual #%d out of %d", randIndividual, self.population_size)
 						cumulativePopulation = 0
 						for j in range(0, len(self.repertoire)):
 								cumulativePopulation += self.population[j]
@@ -1353,90 +1489,124 @@ class tcrRepertoire:
 										self.log.debug("Individual is instance of cell %d in repertoire", j)
 										readIndividual = j
 										break
-
-						# Calculate our read length for this particular read
+						outputComment='@STIG:readnum=%d:clone=%d' % (len(outputReads), j)
+								
+						# Calculate our required length(s) for this particular read
 						readLength = None
 						if distribution == 'gaussian':
-								if paired_end is False:
+								if read_type == 'single':
 										if read_length_sd > 0:
-												randLength = 0
-												while abs(randLength - read_length_mean) / read_length_sd > read_length_sd_cutoff and randLength <= 0:
-														randLength = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
-												readLength = (randLength)
+												readLength = 0
+												while abs(readLength - read_length_mean) / read_length_sd > read_length_sd_cutoff or readLength <= 0:
+														readLength = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
 										else:
 												readLength = read_length_mean
 										
-								else: # Paired-end reads
+								elif read_type == 'paired':
 										read1Length = 0
 										read2Length = 0
-										innerMateLength = 0
+										insertLength = 0
 										if read_length_sd > 0:
-												while abs(read1Length - read_length_mean) / read_length_sd > read_length_sd_cutoff and read1Length <= 0:
+												while abs(insertLength - insert_length_mean) / insert_length_sd > insert_length_sd_cutoff or insertLength <= 0:
+														insertLength = int(round(numpy.random.normal(insert_length_mean, insert_length_sd)))
+												while abs(read1Length - read_length_mean) / read_length_sd > read_length_sd_cutoff or read1Length <= 0 or read1Length > insertLength:
 														read1Length = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
-												while abs(read2Length - read_length_mean) / read_length_sd > read_length_sd_cutoff and read2Length <= 0:
+												while abs(read2Length - read_length_mean) / read_length_sd > read_length_sd_cutoff or read2Length <= 0 or read2Length > insertLength:
 														read2Length = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
-												while abs(innerMateLength - inner_mate_length_mean) / inner_mate_length_sd > inner_mate_length_sd_cutoff and innerMateLength <= 0:
-														innerMateLength = int(round(numpy.random.normal(inner_mate_length_mean, inner_mate_length_sd)))
 										else:
 												read1Length = read_length_mean
 												read2Length = read_length_mean
-												innerMateLength = inner_mate_length_mean
-										readLength = (read1Length, innerMateLength, read2Length)
+												insertLength = insert_length_mean
+										readLength = insertLength
+
+								elif read_type == 'amplicon':
+										if read_length_sd > 0:
+												readLength = 0
+												while abs(readLength - read_length_mean) / read_length_sd > read_length_sd_cutoff or readLength <= 0:
+														readLength = int(round(numpy.random.normal(read_length_mean, read_length_sd)))
+										else:
+												readLength = read_length_mean
+
+								else:
+										self.log.critical("Invalid read type '%s' passed to simulateRead()", read_type)
+										exit(-10)
 														
 						else:
-								self.log.critical("TODO:Implement non-gaussian distributions?")
+								self.log.critical("Non-gaussian distributions are not supported at this time")
 								exit(-10)
-								#TODO
-								# Implement non-gaussian distributions?
-										
-										
-						self.log.debug("Read length for this read will be: %s", readLength)
-
+								#TODO: Implement non-gaussian distributions?
 
 						# Pick a location within this individual's DNA and generate the read
-						totalReadLength = readLength if isinstance(readLength, int) else readLength[0] + readLength[1] + readLength[2]
+						totalReadLength = readLength if isinstance(readLength, int) else readLength[1]
 
+						self.log.debug("Read length for this read will be: %s", totalReadLength)
+
+						# Pick a chain to read from (alpha / beta or gamma / delta)
 						receptorCoordinates = None
 						if random.random() < 0.5:
 								if space == 'dna':
 										receptorCoordinates = self.repertoire[readIndividual].DNA1
 								elif space == 'rna':
 										receptorCoordinates = self.repertoire[readIndividual].RNA1
+								outputComment = (outputComment + ":chain=%s" % self.repertoire[readIndividual].type1)
+								self.log.debug("Output chain is of type %s", self.repertoire[readIndividual].type1)
 						else:
 								if space == 'dna':
 										receptorCoordinates = self.repertoire[readIndividual].DNA2
 								elif space == 'rna':
 										receptorCoordinates = self.repertoire[readIndividual].RNA2
+								outputComment = (outputComment + ":chain=%s" % self.repertoire[readIndividual].type2)
+								self.log.debug("Output chain is of type %s", self.repertoire[readIndividual].type2)
 
 						chromosome, sequenceStart, strandStart, sequence, sequenceEnd, strandEnd = receptorCoordinates
-						
-						self.log.debug("Choosing between [-100, %d]", len(sequence))
-						
+
+						# Determine a location within this chain's sequence and pull the read
 						outputSequence = ''
-						randomStart = random.choice(range(-100, len(sequence)))
+						if read_type != 'amplicon': # Non amplicon reads have a random location selected...
+								startRange = 0 - totalReadLength + 1
+								endRange = len(sequence) - 1
+								self.log.debug("Choosing between [%d, %d]", startRange, endRange)
+								startIndex = random.choice(range(startRange, endRange)) # Range is /inclusive/
+								outputComment = outputComment + ":randpos=%d" % startIndex
+						elif read_type == 'amplicon':
+								if sequence.find(amplicon_probe) > 0:
+										self.log.debug("Found amplicon sequence at position %d", sequence.find(amplicon_probe))
+										startIndex = sequence.find(amplicon_probe)
+										outputComment = outputComment + ":ampliconStartPos=%d" % startIndex
+								elif sequence.find(self.config.reverseComplement(amplicon_probe)) > 0:
+										self.log.debug("Found amplicon sequence at complement position %d",  sequence.find(self.config.reverseComplement(amplicon_probe)))
+										startIndex =  sequence.find(self.config.reverseComplement(amplicon_probe)) - totalReadLength + len(amplicon_probe)
+										outputComment = outputComment + ":ampliconStartPos=%d:ampliconProbePos=%d" % (startIndex, startIndex + totalReadLength - len(amplicon_probe))
+								else:
+										self.log.debug("Did not find amplicon probe on this chain")
+										continue
+						else:
+								self.log.critical("simulateRead(): Invalid read_type %s", read_type)
+								exit(-10)
 						
 						_5UTRBases = 0
-						if randomStart < 0 and randomStart + totalReadLength < 0:
+						if   startIndex < 0 and abs(startIndex) > totalReadLength:
 								_5UTRBases = totalReadLength
-						elif randomStart < 0:
-								_5UTRBases = abs(randomStart)
+						elif startIndex < 0:
+								_5UTRBases = abs(startIndex)
 
 						_3UTRBases = 0
-						if randomStart > 0 and randomStart + totalReadLength > len(sequence):
-								_3UTRBases = totalReadLength - (len(sequence) - randomStart)
+						if   startIndex >= 0 and (len(sequence) - startIndex) < totalReadLength: # Read spans sequence and 3' UTR
+								_3UTRBases = totalReadLength - (len(sequence) - startIndex)
+						elif startIndex <  0 and (len(sequence) + abs(startIndex)) < totalReadLength: # Read spans 5' UTR, sequence and 3' UTR
+								_3UTRBases = totalReadLength - (len(sequence) + abs(startIndex))
 
-						self.log.debug("Starting read at position %d, 5p %db 3p %db", randomStart, _5UTRBases, _3UTRBases)
-
+						self.log.debug("Starting read at position %d, 5p %db 3p %db", startIndex, _5UTRBases, _3UTRBases)
 								
 						if _5UTRBases > 0:
 								outputSequence = self.config.readChromosome(chromosome, sequenceStart - _5UTRBases + 1, sequenceStart, strandStart)
-
+								
 						if _5UTRBases > 0 and _5UTRBases < totalReadLength:
 								outputSequence += sequence[0:totalReadLength - _5UTRBases]
 						elif _5UTRBases > 0 and _5UTRBases >= totalReadLength:
 								outputSequence # Do nothing
 						elif _5UTRBases == 0 and _3UTRBases == 0:
-								outputSequence += sequence[randomStart:randomStart+totalReadLength]
+								outputSequence += sequence[startIndex:startIndex+totalReadLength]
 						elif _3UTRBases > 0:
 								outputSequence += sequence[len(sequence) - totalReadLength + _3UTRBases:]
 						else:
@@ -1446,13 +1616,30 @@ class tcrRepertoire:
 						if _3UTRBases > 0:
 								outputSequence += self.config.readChromosome(chromosome, sequenceEnd, sequenceEnd + _3UTRBases - 1, strandEnd)
 
-						if paired_end is False:
-								outputReads.append(outputSequence)
+						# Append this single/paired/amplicon read to our output array outputReads
+						if read_type == 'single':
+								outputReads.append((outputSequence, outputComment))
+								if len(outputSequence) != totalReadLength:
+										self.log.critical("Read length exception: Expected %d, got %d (read start: %d, sequence length: %d, 5p UTR: %d, 3p UTR: %d)", totalReadLength, len(outputSequence), startIndex, len(sequence), _5UTRBases, _3UTRBases)
+										exit(-10)
+						elif read_type == 'paired':
+								outputReads.append(((outputSequence[0:read1Length], self.config.reverseComplement(outputSequence[len(outputSequence) - read2Length:])), outputComment))
+								if len(outputReads[-1][0][0]) != read1Length or len(outputReads[-1][0][1]) != read2Length:
+										self.log.critical("Read length exception: Expected (%d:%d), got (%d:%d) (read start: %d, sequence length: %d, 5p UTR: %d, 3p UTR: %d)", read1Length, read2Length, len(outputReads[-1][0]), len(outputReads[-1][1]), startIndex, len(sequence), _5UTRBases, _3UTRBases)
+										exit(-10)
+						elif read_type == 'amplicon':
+								outputReads.append(((outputSequence, self.config.reverseComplement(outputSequence)), outputComment))
+								if len(outputSequence) != totalReadLength:
+										self.log.critical("Read length exception: Expected %d, got %d (read start: %d, sequence length: %d, 5p UTR: %d, 3p UTR: %d)", totalReadLength, len(outputSequence), startIndex, len(sequence), _5UTRBases, _3UTRBases)
+										exit(-10)
 						else:
-								outputReads.append([outputSequence[0:readLength[0]], outputSequence[readLength[0] + readLength[1]:]])
+								self.log.critical("simulateRead(): Invalid read type %s", read_type)
+								exit(-10)
 								
-				return outputReads
+				return outputReads # end simulateRead()
 
+
+		
 		# Return statistics about this repertoire, suitable for saving to a file
     #
     # Arguments: none
@@ -1468,7 +1655,7 @@ class tcrRepertoire:
 		def getStatistics(self, addHeader = False):
 				retval = []
 				if addHeader == True:
-						retval.append(["CELL_COUNT,VALLELE_1, JALLELE_1, CDR3_1, RNA_1, DNA_1, VALLELE_2, J_ALLELE_2, CDR3_2, RNA_2, DNA_2"])
+						retval.append(["CLONE,CELL_COUNT,VALLELE_1, JALLELE_1, CDR3_1, RNA_1, DNA_1, VALLELE_2, J_ALLELE_2, CDR3_2, RNA_2, DNA_2"])
 
 				for i in range(0, len(self.repertoire)):
 						CDR3_1, CDR3_2 = self.repertoire[i].getCDR3Sequences()
@@ -1478,7 +1665,7 @@ class tcrRepertoire:
 						j1Allele = "%s*%s" % (self.config.receptorSegment[self.repertoire[i].J1[0]]['gene'], self.repertoire[i].J1[1])
 						j2Allele = "%s*%s" % (self.config.receptorSegment[self.repertoire[i].J2[0]]['gene'], self.repertoire[i].J2[1])
 				
-						stats = [ self.population[i],
+						stats = [ i, self.population[i],
 											v1Allele, j1Allele, CDR3_1, self.repertoire[i].RNA1[3], self.repertoire[i].DNA1[3],
 											v2Allele, j2Allele, CDR3_2, self.repertoire[i].RNA2[3], self.repertoire[i].DNA2[3] ]
 											
