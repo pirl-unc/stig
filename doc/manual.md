@@ -1,7 +1,7 @@
 STIG: Synthetic TCR Informatics Generator
 =========================================
 
-Current for v0.4.3
+Current for v0.4.4
 
 Table of contents
 -----------------
@@ -46,7 +46,7 @@ usage: stig [-h] [--chr7-filename FILE] [--chr14-filename FILE]
             [--repertoire-size N] [--repertoire-unique]
             [--repertoire-chain-unique] [--repertoire-cdr3-unique]
             [--population-size N]
-            [--population-distribution {gaussian,chisquare}]
+            [--population-distribution {gaussian,chisquare,stripe,equal}]
             [--population-gaussian-parameters N | --population-chisquare-parameters k:cutoff]
             [--read-type {paired,single,amplicon}] [--sequence-type {dna,rna}]
             [--sequence-count N] [--read-length-mean READ_LENGTH_MEAN]
@@ -83,7 +83,7 @@ optional arguments:
                         Load TCR population and repertoire data from FILE,
                         rather than generating from scratch
   --repertoire-size N   Size of the TCR repertoire (i.e. the number of unique
-                        TCRs that are generated). Default is 10
+                        TCR clonotypes that are generated). Default is 10
   --repertoire-unique   Force each TCR to be unique on the RNA level. Default
                         is to allow collisions
   --repertoire-chain-unique
@@ -98,15 +98,18 @@ optional arguments:
                         performance issues as repertoire size increases.
                         Default is to allow collisons
   --population-size N   The number of T-cells in the repertoire (e.g. if
-                        repertoire-sze=5 and population-size=15, then there
-                        are 3 clones of each unique TCR on average). Default
-                        is 100
-  --population-distribution {gaussian,chisquare}
+                        repertoire-size=5 and population-size=15, then there
+                        are, on average, 3 clones of each unique TCR
+                        clonotype). Default is 100
+  --population-distribution {gaussian,chisquare,stripe,equal}
                         Population distribution function. This defines the
                         function used to distribute the population among the
-                        repertoire. Default is the (normalized) gaussian. See
-                        --population-gaussian-parameters, --population-
-                        chisquare-parameters
+                        repertoire. Default is the (normalized) gaussian.
+                        'stripe' will assign the Nth cell in the population to
+                        the (N % repertoire-size) clonotype. 'equal' assigns
+                        cells in the population to each clonotype with equal
+                        probability. See --population-gaussian-parameters,
+                        --population-chisquare-parameters
   --population-gaussian-parameters N
                         Parameter for the normalized gaussian distribution.
                         The number of standard deviations to include in our
@@ -161,13 +164,14 @@ optional arguments:
                         fastq, and --degrade-fastq-random. See: --degrade-
                         variability
   --degrade-phred PHRED_STRING
-                        Simulate non-optimal quality using a Phred+33 string
-                        to specify quality on a per-nucleotide basis. If a
-                        generated read is longer than the given phred string,
-                        then the last character in the phred string is used.
-                        Default is off. This option is mutually exclusive to
-                        --degrade-logistic, --degrade-fastq and --degrade-
-                        fastq-random. See: --degrade-variability
+                        Simulate non-optimal quality using a Phred+33
+                        (Illumina 1.8+) string to specify quality on a per-
+                        nucleotide basis. If a generated read is longer than
+                        the given phred string, then the last character in the
+                        phred string is used. Default is off. This option is
+                        mutually exclusive to --degrade-logistic, --degrade-
+                        fastq and --degrade-fastq-random. See: --degrade-
+                        variability
   --degrade-fastq FILE[,FILE2]
                         Simulate non-optimal quality by degrading reads based
                         on Phred+33 quality strings from the given fastq FILE,
@@ -378,4 +382,4 @@ N.b. that the versions of these files were hand-curated to exclude various logic
 ### 9.2 Known issues/limitations
 
 1. Loading a repertoire/population will attempt to re-access the chromosome files it was originally saved with.  There currently is not a way to change/update this, and modifying the chromosome files may result in unintended behavior when generating reads with a previously-saved repertoire
-2. Loading a repertoire/population will contain the allele data from when the repertoire was generated.  As the alleles are used to generate the repertoires, this is intended behavior.
+2. Loading a repertoire/population will contain the allele data from when the repertoire was generated (i.e. it will not attempt to re-load allele data from the data files).  As the initial alleles are used to generate the repertoires, this is intended behavior.
