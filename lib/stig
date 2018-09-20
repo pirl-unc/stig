@@ -55,7 +55,7 @@ parser.add_argument("--load-population", metavar='FILE', type=str,
 										help='Load TCR population and repertoire data from FILE, rather than generating from scratch')
 
 parser.add_argument('--repertoire-size', metavar='N', type=int, default=10,
-										help='Size of the TCR repertoire (i.e. the number of unique TCRs that are generated).  Default is 10')
+										help='Size of the TCR repertoire (i.e. the number of unique TCR clonotypes that are generated).  Default is 10')
 parser.add_argument('--repertoire-unique', action = 'store_true',
 										help = "Force each TCR to be unique on the RNA level.  Default is to allow collisions")
 parser.add_argument('--repertoire-chain-unique', action = 'store_true',
@@ -63,9 +63,9 @@ parser.add_argument('--repertoire-chain-unique', action = 'store_true',
 parser.add_argument('--repertoire-cdr3-unique', action = 'store_true',
 										help = "Force each CDR3 of each chain to be unique on the nucleotide level.  Implies unique TCRs as per --repertoire-unique and unique chains as per --repertoire-chain-unique.  Note this may cause performance issues as repertoire size increases.  Default is to allow collisons")
 parser.add_argument('--population-size', metavar='N', type=int, default=100,
-										help='The number of T-cells in the repertoire (e.g. if repertoire-sze=5 and population-size=15, then there are 3 clones of each unique TCR on average).  Default is 100')
-parser.add_argument('--population-distribution', choices = ['gaussian', 'chisquare'], default='gaussian',
-										help = 'Population distribution function.  This defines the function used to distribute the population among the repertoire.  Default is the (normalized) gaussian.  See --population-gaussian-parameters, --population-chisquare-parameters')
+										help='The number of T-cells in the repertoire (e.g. if repertoire-size=5 and population-size=15, then there are, on average, 3 clones of each unique TCR clonotype).  Default is 100')
+parser.add_argument('--population-distribution', choices = ['gaussian', 'chisquare', 'stripe', 'equal'], default='gaussian',
+										help = 'Population distribution function.  This defines the function used to distribute the population among the repertoire.  Default is the (normalized) gaussian.  \'stripe\' will assign the Nth cell in the population to the (N %% repertoire-size) clonotype.  \'equal\' assigns cells in the population to each clonotype with equal probability. See --population-gaussian-parameters, --population-chisquare-parameters')
 
 parserGroup1 = parser.add_mutually_exclusive_group()
 parserGroup1.add_argument('--population-gaussian-parameters', metavar='N', type=float, default=3.0,
@@ -258,7 +258,8 @@ else:
 						my_repertoire.populate(args.population_size, 'chisquare', cs_k=float(k), cs_cutoff=float(cutoff))
 				else:
 						raise ValueError("Invalid chi-square parameters: %s" % args.population_chisquare_parameters)
-				
+		else:
+				my_repertoire.populate(args.population_size, args.population_distribution)
 
 # Obtain our simulated reads, if requested
 if args.sequence_count > 0:

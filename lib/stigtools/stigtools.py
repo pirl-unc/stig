@@ -1176,7 +1176,7 @@ class tcr:
 						sequenceTuple = self.config.recombinate(self.V2, self.D2, self.J2, self.C2)
 						if sequenceTuple is not None:
 								self.DNA2, self.RNA2 = sequenceTuple
-								self.log.info("randomize() complete Frame shifted")
+								self.log.info("randomize() complete")
 								return
 
 		# getCDR3Sequences - Return RNA sequences of the CDR3 regions
@@ -1239,7 +1239,7 @@ class tcrRepertoire:
 										for j in range(0, i):
 												if ( self.repertoire[i].RNA1 == self.repertoire[j].RNA1 and
 														 self.repertoire[i].RNA2 == self.repertoire[j].RNA2 ) :
-														self.log.debug("Duplicate CDR3 at position %d", j)
+														self.log.debug("Duplicate TCR at position %d", j)
 														break
 										else:
 												unique = True
@@ -1249,7 +1249,7 @@ class tcrRepertoire:
 						self.log.debug("Finished generating repertoire bucket %d of %d", i + 1, size)
 				self.population = [0] * size
 				self.population_size = 0
-				self.distribution_options = ('flat', 'equal', 'gaussian', 'chisquare')
+				self.distribution_options = ('stripe', 'equal', 'gaussian', 'chisquare')
 				self.distribution = None
 
 				return
@@ -1332,8 +1332,8 @@ class tcrRepertoire:
 		#                   then some TCR CDR3 will be shared between individuals.
 		# distribution -    String.  Describes the distribution of individual cells
 		#                   across the repertiore.  Current options are:
-		#                   flat: Distribute cells across all repertoires equally
-		#                   even: Equal odds across all repertoires (may approach flat)
+		#                   equal: Distribute cells across all repertoires equally
+		#                   stripe: Equal odds across all repertoires (may approach flat)
 		#                   gaussian: Gaussian distribution with g_cutoff standard
 		#                   deviations included in the repertiore
 		#                   chisquare: Chi Square distribution.  Takes cs_k and
@@ -1355,18 +1355,18 @@ class tcrRepertoire:
 						self.population_size = population_size
 				else:
 						raise ValueError("population size must be a positive integer")
-						
-				if self.distribution is 'flat':
+
+				if self.distribution == 'equal':
 						for i in range(0, self.population_size):
 								random_bin = int(math.floor(random.random() * len(self.repertoire)))
 								self.population[random_bin] += 1
 
-				elif self.distribution is 'equal':
+				elif self.distribution == 'stripe':
 						for i in range(0, self.population_size):
 								random_bin = int(i % len(self.repertoire))
 								self.population[random_bin] += 1
 						
-				elif self.distribution is 'gaussian':
+				elif self.distribution == 'gaussian':
 						if( g_cutoff < 0 ):
 								raise ValueError("Argument sd_cutoff for populate must be a positive integer")
 
@@ -1383,7 +1383,7 @@ class tcrRepertoire:
 										self.population[int(f / bucket_size)] += 1
 										population_generated += 1
 
-				elif self.distribution is 'chisquare':
+				elif self.distribution == 'chisquare':
 						if( cs_k <= 0 or cs_cutoff <= 0 ):
 								raise ValueError("Invalid arguments for chi-square distribution.  Must be k > 0 and cutoff >0.  Got %f, %f" % (cs_k, cs_cutoff))
 						population_generated = 0
@@ -1397,8 +1397,8 @@ class tcrRepertoire:
 										population_generated += 1
 
 				else:
-						raise ValueError("Invalid distribution %s" % self.distribution)
-				
+						raise ValueError("Invalid distribution %s, must be one of %s" % (self.distribution, self.distribution_options))
+
 				self.log.info("populate() complete...")
 
 
