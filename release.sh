@@ -81,6 +81,7 @@ EOF
 	    git checkout $RELEASE_BRANCH
 	    git rm branch.info
 	    git rm Release.checklist
+	    git rm TODO
 	    git rm Makefile
 	    git rm release.sh
 	    git commit -a -m "File removal in preparation for release"
