@@ -54,7 +54,7 @@ all:
 work:
 	./lib/stig $(TCR_OPTS)
 
-devel: degrade_fastq
+devel: distribution_debug
 
 degrade_fastq: devel.population.bin
 	./lib/stig --log-level=debug --degrade-fastq=./data/test_degrade.fastq $(LOAD_DEVEL_OPTS) $(BASE_OPTS)
@@ -73,6 +73,9 @@ devel.population.bin:
 amplicon: devel.population.bin
 	./lib/stig --amplicon-probe=GATCTCTGCTTCTGATGGCTCAAACAC --output=devel --load-population=devel.population.bin $(DEGRADE_PHRED_OPTS) $(AMPLICON_OPTS) $(BASE_OPTS)
 	./lib/stig --amplicon-probe=AGAATCCTTACTTTGTGACACATTTGTTTGAGA --output=devel --load-population=devel.population.bin $(DEGRADE_PHRED_OPTS) $(AMPLICON_OPTS) $(BASE_OPTS)
+
+distribution_debug:
+	./lib/stig --population-distribution=logisticcdf --output=distribution --repertoire-size=40 --population-size=1000 --sequence-count=0 $(BASE_OPTS)
 
 
 # Test targets

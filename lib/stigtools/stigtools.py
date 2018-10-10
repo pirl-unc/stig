@@ -1249,7 +1249,7 @@ class tcrRepertoire:
 						self.log.debug("Finished generating repertoire bucket %d of %d", i + 1, size)
 				self.population = [0] * size
 				self.population_size = 0
-				self.distribution_options = ('stripe', 'equal', 'gaussian', 'chisquare')
+				self.distribution_options = ('stripe', 'equal', 'gaussian', 'chisquare', 'logisticcdf')
 				self.distribution = None
 
 				return
@@ -1332,17 +1332,20 @@ class tcrRepertoire:
 		#                   then some TCR CDR3 will be shared between individuals.
 		# distribution -    String.  Describes the distribution of individual cells
 		#                   across the repertiore.  Current options are:
-		#                   equal: Distribute cells across all repertoires equally
-		#                   stripe: Equal odds across all repertoires (may approach flat)
+		#                   stripe: Distribute cells across all repertoires equally
+		#                   equal: Uniform distribution (may approach stripe)
 		#                   gaussian: Gaussian distribution with g_cutoff standard
 		#                   deviations included in the repertiore
 		#                   chisquare: Chi Square distribution.  Takes cs_k and
 		#                   cs_cutoff arguments to describe k value and the largest
 		#                   x-axis value to include in the distribution, respectively
+		#                   logisticcdf: Use logistic cumulative distribution
+		#                   with a std dev cutoff of l_cutoff.  This will produce
+		#                   CDR3 abundancy counts with a near-gaussian distribution
 		#
 		# Returns: Nothing
 		#		
-		def populate( self, population_size, distribution, g_cutoff=3, cs_k=2, cs_cutoff=8 ):
+		def populate( self, population_size, distribution, l_scale=1, l_cutoff=3, g_cutoff=3, cs_k=2, cs_cutoff=8 ):
 				self.log.info("populate() called...")
 				self.log.debug("Arguments: %s", (population_size, distribution, g_cutoff, cs_k, cs_cutoff))
 				
@@ -1396,6 +1399,34 @@ class tcrRepertoire:
 										self.population[int((x/cs_cutoff) * len(self.repertoire))] += 1
 										population_generated += 1
 
+				elif self.distribution == 'logisticcdf':
+						if( l_cutoff <= 0 ):
+								raise ValueError("Invalid arguments for logisticcdf distribution.  Cutoff must be a positive number");
+						if( l_scale <= 0 ):
+								raise ValueError("Invalid arguments for logisticcdf distribution.  Scale must be a positive number");
+								
+						# Generate a list of logistically distributed values, with appropriate scale and cutoff values
+						probability_distribution = list()
+						while( len(probability_distribution) < len(self.repertoire) ):
+								dist = numpy.random.logistic(0, l_scale, len(self.repertoire) - len(probability_distribution) )
+								dist = dist[(dist < l_cutoff) & (dist > -1 * l_cutoff)]
+								probability_distribution.extend(dist)
+
+						# Normalize our list, and find the cumulative value of the distribution
+						probability_distribution = sorted(probability_distribution)
+						min_value = abs(probability_distribution[0])
+						sum_value = 0
+						for i in range(0, len(probability_distribution)):
+								probability_distribution[i] += min_value + 1
+								sum_value += probability_distribution[i]
+
+						for i in range(0, len(probability_distribution)):
+								self.population[i] = int(round((probability_distribution[i] / sum_value) * self.population_size))
+
+						if sum(self.population) != self.population_size:
+								self.log.warning("logisticcdf distribution instantiating %d virtual cells, rather than %d as requested.  This is due to accumulated rounding errors while best approximating the requested distribution, and should not otherwise affect the normal operation of STIG.  See the manual for more details.", sum(self.population), self.population_size)
+								self.population_size = sum(self.population)
+						
 				else:
 						raise ValueError("Invalid distribution %s, must be one of %s" % (self.distribution, self.distribution_options))
 
