@@ -1,0 +1,4 @@
+* Complete Authors section of README
+* Document that logisticcdf distribution will sometimes make more/fewer T-cells than requested
+* Document distributions and their usecases (e.g. logisticcdf should give roughly gaussian abundancy metrics)
+* Push to Github
