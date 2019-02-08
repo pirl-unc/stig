@@ -5,7 +5,8 @@ import random
 import math
 import numpy
 import time
-
+#import os.path
+import os
 
 # TCR configuration class
 #
@@ -122,17 +123,13 @@ class tcrConfig:
 				# Initialize our instance variables
 				self.receptorSegment = []
 				self.geneName = []
-				self.chr7Filename = None
-				self.chr7Offset = 0
-				self.chr7LineLength = 0
-				self.chr14Filename = None
-				self.chr14Offset = 0
-				self.chr14LineLength = 0
-
+				self.chromosomeFile = []
 				self.setLog(log)
-
+				
 				return
 
+
+		
 		# setLog - Configure our logging object
 		# 
 		# args:
@@ -163,7 +160,54 @@ class tcrConfig:
 		def rmLog( self ):
 				self.log = None
 
+
 				
+		# setWorkingDir - Set the working directory
+		#                 This function will scan the directory and ensure
+		#                 necessary files are present, raising ValueError if there
+		#                 are missing components
+		# Arguments: Directory name
+		# Returns: nothing
+		#
+		def setWorkingDir( self, dirname ):
+				self.log.info("setWorkingDir(%s) called", dirname)
+
+				#
+				# Identify the requisite tcell receptor component file, and read it with self.readTCRConfig()
+				#
+				tcrconfigFile = "%s/tcell_receptor.tsv" % (dirname)
+				if not os.path.isfile( tcrconfigFile ):
+						self.log.critical("Could not locate T-cell receptor component file (%s), ensure working directory contains necessary files" % tcrconfigFile)
+						exit(-10)						
+				else:
+						self.readTCRConfig( tcrconfigFile )
+
+				#
+				# With the component file read, identify our required chromosome references and initialize with self.setChromsomeFile()
+				#
+				chromosomeNumbers=set(map(lambda x: re.match(r'^\d+', x['chromosome']).group(0), self.receptorSegment)) # Extracts chromosome names from receptorSegment members and extracts leading numeric components
+				for x in chromosomeNumbers:
+						self.setChromosomeFile(x, '%s/chr%s.fa' % (dirname, x))
+
+				#
+				# Read allele files from the working dir
+				#
+				fastaFiles = []
+				for x in os.listdir("%s/allele" % dirname):
+						x = "%s/allele/%s" % (dirname, x)
+						if os.path.isfile(x):
+								if re.match('^.*\.fasta$', x):
+										fastaFiles.append(x)
+				self.readAlleles(fastaFiles)
+
+				self.log.info("setWorkingDir() returning")
+
+				
+		# readTCRConfig - Read in TCR component data from a file
+		#
+		# Arguments: Filename of file to read
+		# Returns:  nothing
+		#
 		def readTCRConfig( self, filename ):
 				self.log.debug("Processing config file %s", filename)
 				open( filename, 'rU' )
@@ -195,8 +239,8 @@ class tcrConfig:
 								new_segment['segment_type'] = matches.groups()[1] if matches.groups()[1] else matches.groups()[3]
 								new_segment['segment_number'] = matches.groups()[2] if matches.groups()[2] else matches.groups()[4]
 
-						if( not re.match('^(14q11.2|7q34|7p14)$', chromosome) ):
-								self.log.info("Invalid chromosome %s on line %d, ignoring", chromosome, line_number)
+						if( not re.match('^([0-9]+(?:[pq](?:[0-9]+(?:\.[0-9]+)?)?)?)$', chromosome) ): # Matches: 7, 7p, 7q11, 9p11.2
+								self.log.info("Invalid chromosome %s on line %d, ignoring. (valid formats: 7, 7p, 11q11, 11q11.2)", chromosome, line_number)
 								continue
 						else:
 								new_segment['chromosome'] = chromosome
@@ -214,7 +258,7 @@ class tcrConfig:
 								new_segment['region'] = region
 
 						if( not re.match('^(\d+)\.\.(\d+)$', coordinates) ):
-								self.log.info("Invalid coordinates %s on line %d, ignoring", coordinates, line_number)
+								self.log.info("Invalid coordinates %s on line %d, ignoring. (Valid format: xxx..yyy)", coordinates, line_number)
 								continue
 						else:
 								matches = re.match('^(\d+)\.\.(\d+)$', coordinates)
@@ -230,7 +274,6 @@ class tcrConfig:
 								if(i['gene'] == new_segment['gene'] and i['region'] == new_segment['region'] ):
 										raise ValueError("Entry for gene and region pair was previously defined!", new_segment)
 						self.receptorSegment.append(new_segment)
-						#self.receptorSegment[component] = new_segment
 
 				# Store a unique set of all gene names
 				geneName = []
@@ -250,7 +293,7 @@ class tcrConfig:
 		# Arguments:
 		# filenames - A string (or array of strings) containing the file name of a fasta-formatted
     #             file with IMGT/GENE-DB headers describing gene allele sequences
-
+		#
 
 		def readAlleles( self, filenames ):
 
@@ -322,68 +365,74 @@ class tcrConfig:
 				self.log.info("readAlleles(): Processing complete")
 
 
-		# setChromosomeFiles - Identify the location of necessary chromosome reference files
+		# setChromosomeFile - Identify the location of a necessary chromosome
+		#                     reference files and initialize some internal
+		#                     data to allow speedy handling of them
 		# 
-		# Arguments:
-		# chr7  - File name of chromsome 7 reference file
-		# chr14 - File name of chromosome 14 reference file
+		# Arguments: Numeric value representing chromosome reference to initialize
+		#            and corresponding reference file name
+		# Returns: nothing
 		# 
-		# Returns:
-		# nothing
 
-		def setChromosomeFiles(self, chr7=None, chr14=None):
+		def setChromosomeFile(self, chrNum, chrFilename):
+				self.log.info("setChromosomeFile(%s, %s) called", chrNum, chrFilename)
 
-				if not chr7 is None:
-						self.chr7Filename = chr7
-						with open(self.chr7Filename) as fp:
-								self.chr7Offset = len(fp.readline())
-								self.chr7LineLength = len(fp.readline()) - 1
-								self.log.debug("Chr14: Offset %d, line length %d", self.chr7Offset, self.chr7LineLength)
-								if( self.chr7Offset > 10 ):
-										self.log.warning("Chromosome file %s does not appear to be in proper format, reading may fail", chr7)
-								
-				if not chr14 is None:
-						self.chr14Filename = chr14
-						with open(self.chr14Filename) as fp:
-								self.chr14Offset = len(fp.readline())
-								self.chr14LineLength = len(fp.readline()) - 1
-								self.log.debug("Chr14: Offset %d, line length %d", self.chr14Offset, self.chr14LineLength)
-								if( self.chr14Offset > 10 ):
-										self.log.warning("Chromosome file %s does not appear to be in proper format, reading may fail", chr14)
-								
+				if not chrNum.isdigit():
+						self.log.critical("setChromosomeFile called with non-integer chromosome number")
+						exit(-10)
+
+				# Check if this chromosome was previously initialized
+				if( len(filter(lambda x: x['chromosome'] == chrNum, self.chromosomeFile)) > 0 ):
+						self.log.error("Attempted to re-register previously initialized chromosome #%s", chrNum)
+
+				# Ensure file exists before proceeding
+				if not os.path.isfile( chrFilename ):
+						self.log.critical("Could not locate reference file for chromosome %s (filename %s), please ensure reference file is in correct location", chrNum, chrFilename)
+#						exit(-10)
+
+				chromosomeStruct = {}
+				chromosomeStruct['filename'] = chrFilename
+				chromosomeStruct['chromosome'] = int(chrNum)
+				
+				with open(chrFilename) as fp:
+						chromosomeStruct['offset'] = len(fp.readline())
+						chromosomeStruct['linelength'] = len(fp.readline()) - 1
+
+
+				self.chromosomeFile.append(chromosomeStruct)
+				self.log.debug("Registered chromosome reference %s", chromosomeStruct)
+				self.log.info("setChromosomeFile() returning...")
+				
 		# readChromosome - Request data from a chromosome reference
 		# 
 		# Arguments:
-		# chromosome - Chromsome reference number.  Currently supported values are 7 and 14.
+		# chromosome - Chromsome reference number.
 		# start - Start coordinates (IMGT)
 		# end   - End coordinates (IMGT)
 		# strand - Strand to read from.  Can be one of: forward, reverse.  Default is forward.
 		
 		def readChromosome(self, chromosome, start, end, strand):
-				self.log.info("readChromosome() starting")
-				self.log.debug("Arguments: %s %s %s %s", chromosome, start, end, strand)
+				self.log.info("readChromosome(%s, %s, %s, %s) starting", chromosome, start, end, strand)
 
-				if start < 0 or end < 0:
-						raise ValueError("Values must be non-zero integers")
-				
-				if not chromosome in (7, 14):
-						raise ValueError("Chromosome must be either 7 or 14")
-				elif chromosome == 7:
-						filename = self.chr7Filename
-						offset = self.chr7Offset
-						lineLength = self.chr7LineLength
-				elif chromosome == 14:
-						filename = self.chr14Filename
-						offset = self.chr14Offset
-						lineLength = self.chr14LineLength
-				else:
-						raise ValueError("Unknown type passed for chromosome number")
-				
 				if start <= 0 or end <= 0:
-						raise ValueError("Start and end values must be positive integers")
+						raise ValueError("Stard and end values must be non-zero integers")
+
+				self.log.info("Here: %s", self.chromosomeFile)
+				chromosomeStruct = filter(lambda x: x['chromosome'] == chromosome, self.chromosomeFile)
 				
+				if( len(chromosomeStruct) == 0 ):
+						self.log.critical('Chromosome %s has not been previously initialized with setChromosomeFile()', chromosome)
+						raise ValueError("Use of uninitialized chromosome reference number")
+				elif( len(chromosomeStruct) == 1 ):
+						filename = chromosomeStruct[0]['filename']
+						offset = chromosomeStruct[0]['offset']
+						lineLength = chromosomeStruct[0]['linelength']
+				else:
+						self.log.critical("Duplicate entries for chromosome %s in chromosomeFile", chromosome)
+						exit(-10)
+						
 				with open(filename) as fp:
-						self.log.info("Bytes requested %d, seek %d, offset %d, reading +%d",
+						self.log.debug("Bytes requested %d, seek %d, offset %d, reading +%d",
 													end-start + 1,
 													(end-start+int(math.floor(start/lineLength)) -1),
 													offset,
@@ -397,6 +446,7 @@ class tcrConfig:
 								data = self.reverseComplement(data)
 
 				#self.log.debug("Read: %s (%db)", data, len(data))
+				self.log.info("readChromosome() returning")
 				return data
 
 		# reverseComplement - Return the reverse complement of a nucleotide string
@@ -446,7 +496,7 @@ class tcrConfig:
 				if J is not None:
 						Jindex, Jallele = J
 
-				# Generate a list of all valid segments (n.b. we pick CDR3 components here, not gene units)
+				# Generate a list of all valid segments (n.b. we pick CDR3 components here (eg V/D/J-REGION), not gene units (eg L-V-GENE-UNIT))
 				segmentChoices = []
 				for i in range(0, len(self.receptorSegment)):
 						if( re.match('^TR'+receptorType+componentName, self.receptorSegment[i]['gene'] ) and
@@ -458,9 +508,11 @@ class tcrConfig:
 										
 								if( componentName == 'J' and
 										self.receptorSegment[i]['chromosome'] == self.receptorSegment[Vindex]['chromosome'] ):
-										if not D is None:
-												if( self.receptorSegment[i]['start_position'] < self.receptorSegment[Dindex]['start_position'] and
-														self.receptorSegment[i]['strand'] == 'forward' ):
+										if D is not None:
+												if( (self.receptorSegment[i]['start_position'] < self.receptorSegment[Dindex]['start_position'] and
+														 self.receptorSegment[i]['strand'] == 'forward' ) or
+														( self.receptorSegment[i]['start_position'] > self.receptorSegment[Dindex]['start_position'] and
+														 self.receptorSegment[i]['strand'] == 'reverse' ) ):
 														self.log.debug("This is not a valid choice: %s (%d)", self.receptorSegment[i]['gene'], i)
 														continue
 										self.log.debug("Valid segment choice %s (%d)", self.receptorSegment[i]['gene'], i)
@@ -1026,6 +1078,11 @@ class tcrConfig:
 		def getFastqQualities(self, filename ):
 				self.log.info("getFastqQualities() called...")
 				qualities = []
+
+				if not os.path.isfile( filename ):
+						self.log.critical("Could not locate FASTQ file for loading quality data: %s" % tcrconfigFile)
+						exit(-10)
+						
 				with open(filename, 'r') as input1:
 						lineNum = 0
 						for line in input1:
@@ -1249,7 +1306,7 @@ class tcrRepertoire:
 						self.log.debug("Finished generating repertoire bucket %d of %d", i + 1, size)
 				self.population = [0] * size
 				self.population_size = 0
-				self.distribution_options = ('stripe', 'equal', 'gaussian', 'chisquare', 'logisticcdf')
+				self.distribution_options = ('stripe', 'equal', 'unimodal', 'chisquare', 'logisticcdf')
 				self.distribution = None
 
 				return
@@ -1332,16 +1389,17 @@ class tcrRepertoire:
 		#                   then some TCR CDR3 will be shared between individuals.
 		# distribution -    String.  Describes the distribution of individual cells
 		#                   across the repertiore.  Current options are:
-		#                   stripe: Distribute cells across all repertoires equally
-		#                   equal: Uniform distribution (may approach stripe)
-		#                   gaussian: Gaussian distribution with g_cutoff standard
-		#                   deviations included in the repertiore
-		#                   chisquare: Chi Square distribution.  Takes cs_k and
-		#                   cs_cutoff arguments to describe k value and the largest
-		#                   x-axis value to include in the distribution, respectively
-		#                   logisticcdf: Use logistic cumulative distribution
-		#                   with a std dev cutoff of l_cutoff.  This will produce
-		#                   CDR3 abundancy counts with a near-gaussian distribution
+		#                   *stripe: Distribute cells across all repertoires equally
+		#                   *equal: Uniform distribution (may approach stripe)
+		#                   *unimodal: Single peak with g_cutoff standard
+		#                    deviations included in the repertiore
+		#                   *chisquare: Chi Square distribution.  Takes cs_k and
+		#                    cs_cutoff arguments to describe k value and the
+		#                    largest x-axis value to include in the distribution,
+		#                    respectively
+		#                   *logisticcdf: Use logistic cumulative distribution
+		#                    with a std dev cutoff of l_cutoff.  This will produce
+		#                    CDR3 abundancy counts with a near-gaussian distribution
 		#
 		# Returns: Nothing
 		#		
@@ -1369,9 +1427,9 @@ class tcrRepertoire:
 								random_bin = int(i % len(self.repertoire))
 								self.population[random_bin] += 1
 						
-				elif self.distribution == 'gaussian':
+				elif self.distribution == 'unimodal':
 						if( g_cutoff < 0 ):
-								raise ValueError("Argument sd_cutoff for populate must be a positive integer")
+								raise ValueError("Argument g_cutoff for populate must be a positive integer")
 
 						population_generated = 0						
 						while( population_generated < self.population_size ):
