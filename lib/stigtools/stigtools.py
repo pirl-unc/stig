@@ -5,8 +5,8 @@ import random
 import math
 import numpy
 import time
-#import os.path
 import os
+import yaml
 
 # TCR configuration class
 #
@@ -78,21 +78,22 @@ class tcrConfig:
 		#				( 'TRGV8', 0.17 ),
 		#				( 'TRDV1', 0.21 ),
 
-		VDJprobability = [
-				( 'TRBV20-1', 0.24 ),
-				( 'TRBV5-1', 0.125 ),
-				( 'TRBV29-1', 0.105 ),
-				( 'TRBV28', 0.051 ),
-				( 'TRBV10-3', 0.045 ),
-				( 'TRBV4-2', 0.04 ),
+		VDJprobability = [];
+		
+#				( 'TRBV20-1', 0.24 ),
+#				( 'TRBV5-1', 0.125 ),
+#				( 'TRBV29-1', 0.105 ),
+#				( 'TRBV28', 0.051 ),
+#				( 'TRBV10-3', 0.045 ),
+#				( 'TRBV4-2', 0.04 ),
 				
-				('TRBV20-1', 'TRBJ2-1', 0.17 ),
-				('TRBV20-1', 'TRBJ1-1', 0.12 ),
-				('TRBV20-1', 'TRBJ2-7', 0.11 ),
-				('TRBV20-1', 'TRBJ1-5', 0.10 ),
-				('TRBV20-1', 'TRBJ2-3', 0.09 ),
-				('TRBV20-1', 'TRBJ2-2', 0.08 ),
-		]
+#				('TRBV20-1', 'TRBJ2-1', 0.17 ),
+#				('TRBV20-1', 'TRBJ1-1', 0.12 ),
+#				('TRBV20-1', 'TRBJ2-7', 0.11 ),
+#				('TRBV20-1', 'TRBJ1-5', 0.10 ),
+#				('TRBV20-1', 'TRBJ2-3', 0.09 ),
+#				('TRBV20-1', 'TRBJ2-2', 0.08 ),
+#		]
 
 		# Define our probabilities for chewback and NT addition at VDJ junction sites
 		# Probabilities are defined by index of the number of nucleotides chewed or added
@@ -109,7 +110,8 @@ class tcrConfig:
 		# See: JDFreeman, RLWarren, et al "Profiling the T-cell receptor beta-chain repertoire by massively parallel sequencing",
 		#      Genome Research, 2009. https://doi.org/10.1101/gr.092924.109
 		#
-		junctionProbability = {
+		junctionProbability = {}
+		TODODELETEme = {
 				'Vchewback' : [ 0.2384, 0.1629, 0.1008, 0.1159, 0.1359, 0.1044, 0.0743, 0.0391, 0.0152, 0.0061, 0.0043, 0.0022, 0.0004, 0.000044 ],
 				'VJaddition': [ 0.1625, 0.1179, 0.1466, 0.1403, 0.1330, 0.0817, 0.0635, 0.048, 0.0357, 0.0233, 0.0184, 0.0073, 0.0073, 0.0071, 0.0033, 0.0013, 0.0009, 0.0005, 0.0002, 0.0004, 0.0002, 0, 0.0009 ],
 				'VDaddition': [ 0.1625, 0.1179, 0.1466, 0.1403, 0.1330, 0.0817, 0.0635, 0.048, 0.0357, 0.0233, 0.0184, 0.0073, 0.0073, 0.0071, 0.0033, 0.0013, 0.0009, 0.0005, 0.0002, 0.0004, 0.0002, 0, 0.0009 ],
@@ -200,6 +202,15 @@ class tcrConfig:
 										fastaFiles.append(x)
 				self.readAlleles(fastaFiles)
 
+				#
+				# Load our recombination probabilities from the working directory
+				#
+#				print(yaml.dump({'recombination': self.VDJprobability, 'junction': self.junctionProbability}))
+				with open("%s/tcell_recombination.yaml" % dirname) as fp:
+						rawDat = yaml.load(fp)
+				self.VDJprobability = rawDat['segments']
+				self.junctionProbability = rawDat['recombination']
+				
 				self.log.info("setWorkingDir() returning")
 
 				
@@ -417,7 +428,6 @@ class tcrConfig:
 				if start <= 0 or end <= 0:
 						raise ValueError("Stard and end values must be non-zero integers")
 
-				self.log.info("Here: %s", self.chromosomeFile)
 				chromosomeStruct = filter(lambda x: x['chromosome'] == chromosome, self.chromosomeFile)
 				
 				if( len(chromosomeStruct) == 0 ):
@@ -583,6 +593,19 @@ class tcrConfig:
 				probabilityTotal = 0
 				for i in segmentProbabilities:
 						probabilityTotal += i[1]
+				if probabilityTotal > 1:
+						vPrior = None
+						if V is not None:
+								vPrior = self.receptorSegment[V[0]]['gene']
+						dPrior = None
+						if D is not None:
+								dPrior = self.receptorSegment[D[0]]['gene']
+						jPrior = None
+						if J is not None:
+								jPrior = self.receptorSegment[J[0]]['gene']
+						self.log.warn("User-defined probability totals for requested segment TR%s%s is > 1.  (Priors: V:%s, D:%s, J:%s)", receptorType, componentName, vPrior, dPrior, jPrior)
+
+						
 				defaultProbability = float(1 - probabilityTotal) / len(segmentChoices)
 				for i in segmentChoices:
 						segmentProbabilities.append((i, defaultProbability))
@@ -949,11 +972,13 @@ class tcrConfig:
 		def roll( self, probability ):
 				rand = random.random()
 				cumulativeProbability = 0
+				index = 0
 				for i in range(0, len(probability)):
 						cumulativeProbability += probability[i]
 						index = i
 						if rand < cumulativeProbability:
-								break
+								return index
+				self.log.warning("Assigning value based on unassigned probability.  While this can be a harmless rounding error, please check your probability configuration to ensure this is intentional (array: %s, sum=%0.6f)", probability, cumulativeProbability)
 				return index
 
 
@@ -1462,7 +1487,7 @@ class tcrRepertoire:
 								raise ValueError("Invalid arguments for logisticcdf distribution.  Cutoff must be a positive number");
 						if( l_scale <= 0 ):
 								raise ValueError("Invalid arguments for logisticcdf distribution.  Scale must be a positive number");
-								
+
 						# Generate a list of logistically distributed values, with appropriate scale and cutoff values
 						probability_distribution = list()
 						while( len(probability_distribution) < len(self.repertoire) ):
@@ -1481,8 +1506,17 @@ class tcrRepertoire:
 						for i in range(0, len(probability_distribution)):
 								self.population[i] = int(round((probability_distribution[i] / sum_value) * self.population_size))
 
-						if sum(self.population) != self.population_size:
-								self.log.warning("logisticcdf distribution instantiating %d virtual cells, rather than %d as requested.  This is due to accumulated rounding errors while best approximating the requested distribution, and should not otherwise affect the normal operation of STIG.  See the manual for more details.", sum(self.population), self.population_size)
+						if self.population_size != sum(self.population):
+								self.log.warning("logisticcdf distribution encountered a rounding error when assigning %d out of %d requested cells.  This may affect the distribution in rare cases, please verify acceptable subclone populations in your STIG population file. See the manual for more details", abs(sum(self.population) - self.population_size), self.population_size)
+
+								missing = self.population_size - sum(self.population)
+								if missing > 0:
+										for i in range(0, missing):
+												self.population[(len(self.population) - i - 1) % len(self.population)] += 1
+								elif missing < 0:
+										for i in range(0, abs(missing)):
+												self.population[(0 + i) % len(self.population)] -= 1
+										
 								self.population_size = sum(self.population)
 						
 				else:

@@ -70,13 +70,25 @@ distribution_debug:
 
 
 # Test targets
-test: test_help test_basic test_degrade test_amplicon
+test: test_help test_basic test_generate test_degrade test_amplicon
 
 test_help:
 	./lib/stig --help 2>&1 >/dev/null
 
 test_basic: devel.population.bin
 	./lib/stig --read-type=paired $(LOAD_DEVEL_OPTS) $(BASE_OPTS)
+
+test_generate:
+	./lib/stig --repertoire-size=1 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
+	./lib/stig --repertoire-size=10 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
+	./lib/stig --repertoire-size=10 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
+	./lib/stig --repertoire-size=10 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
+	./lib/stig --repertoire-size=10 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
+	./lib/stig --repertoire-size=100 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
+	./lib/stig --repertoire-size=500 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
+	./lib/stig --repertoire-size=500 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
+	./lib/stig --repertoire-size=500 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
+	./lib/stig --repertoire-size=500 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
 
 test_degrade: display_degradation degrade_fastq
 
