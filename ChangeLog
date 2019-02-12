@@ -57,7 +57,8 @@
 * Updated command line help to clarify distribution options
 * Fixed issue where stripe/flat distributions were not properly recognized by populate()
 
-## STIG [xxxx]: 2018-10-02
+## STIG [0.5.0]: 2018-10-02
 * Added logisticcdf population distribution
 * Added documentation of required T-cell receptor component coordinates
 * Moved chromosome and allele files into working dir, updated code to look for required chromosome and allele files automatically based on directory structure
+* Updated documentation to reflect github address

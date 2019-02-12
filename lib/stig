@@ -38,7 +38,7 @@ parser = argparse.ArgumentParser(description = "Generate synthetic TCR read data
 																 epilog = "Please see manual or README for further details" )
 
 parser.add_argument('working_dir', metavar='WORKING_DIR', nargs='?', default='data',
-										help='Directory with tcell_receptor.tsv, reference chromosome(s), & allele subdir.  Default is "data"')
+										help="Directory with tcell_receptor.tsv, tcell_recombination.yaml, reference chromosome(s), & allele subdir.  Default is 'data'")
 
 parser.add_argument("--output", metavar='BASENAME', default='stig.out',
 										help='Basename for output files, e.g. \'--output=foo\' will write to \'foo.fastq\', \'foo.statistics.csv\', etc.  Default is \'stig.out\'')

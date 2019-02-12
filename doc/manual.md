@@ -63,8 +63,9 @@ usage: stig [-h] [--output BASENAME] [--load-population FILE]
 Generate synthetic TCR read data
 
 positional arguments:
-  WORKING_DIR           Directory with tcell_receptor.tsv, reference
-                        chromosome(s), & allele subdir. Default is "data"
+  WORKING_DIR           Directory with tcell_receptor.tsv, 
+                        tcell_recombination.yaml, reference chromosome(s),
+                        & allele subdir.  Default is 'data'
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -364,7 +365,7 @@ STIG supports multiple options for distributing virtual cells between the underl
 
 This uses the logistic (or 'sigmoid') cumulative distribution function to distribute cells amongs the various clonotypes.  Thus, there will be a few subclones with very few cells (corresponding to the bottom tail of the sigmoid curve), there will be a larger collection of subclones with increasingly higher levels of clones (the middle of the curve), and few subclones with a very large number of cells.  The parameters of the logistic curve can be adjusted with the `--population-logisticcdf-parameters` argument, which can adjust the scale (or 'steepness') of the curve, as well as +/- X-axis cutoff (since the logistic is defined over an infinte range of negative and positive values).
 
-n.b. That, in some cases, rounding losses when trying to fit the given number of cells into the given number of clonotypes can lead to cells that don't fit within the distribution.  In this case, STIG will distribute these losses by either subtracting clones from the left side of the distribution, or adding clones to the right side of the distribution.  Except for very small population values, this is unlikely to meaningfully impact the desired distribution.  STIG will print a warning message to alert the user of the adjustments for the rounding losses, to the effect of: `logisticcdf distribution encountered a rounding error when assigning X out of Y requested cells.  This may affect the distribution in rare cases, please verify acceptable subclone populations in your STIG population file. See the manual for more details`.
+n.b. That, in some cases, rounding losses when trying to fit the given number of cells into the given number of clonotypes can lead to cells that don't fit within the distribution.  In this case, STIG will first retry the fit multiple times by re-rolling the distribution with identical parameters.  In the event that it hits a maximum retry value (currently 500 times), STIG will instead distribute these losses by either subtracting clones from the left side of the distribution, or adding clones to the right side of the distribution.  Except for very small population values, this is unlikely to meaningfully impact the desired distribution.  STIG will print a warning message to alert the user of the adjustments for the rounding losses, to the effect of: `logisticcdf distribution encountered a rounding error when assigning X out of Y requested cells.  This may affect the distribution in rare cases, please verify acceptable subclone populations in your STIG population file. See the manual for more details`.
 
 ##### unimodal
 
