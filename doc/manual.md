@@ -63,8 +63,9 @@ usage: stig [-h] [--output BASENAME] [--load-population FILE]
 Generate synthetic TCR read data
 
 positional arguments:
-  WORKING_DIR           Directory with tcell_receptor.tsv, reference
-                        chromosome(s), & allele subdir. Default is "data"
+  WORKING_DIR           Directory with tcell_receptor.tsv, 
+                        tcell_recombination.yaml, reference chromosome(s),
+                        & allele subdir.  Default is 'data'
 
 optional arguments:
   -h, --help            show this help message and exit

@@ -56,78 +56,14 @@ import yaml
 
 class tcrConfig:
 
-
-
-		# Define our probabilities for VDJ recombination likelihoods.
-		# The numbers for beta-chain likelihoods are adapted from figures in the work of J Freeman and R Warren as described below
-		# See: JDFreeman, RLWarren, et al "Profiling the T-cell receptor beta-chain repertoire by massively parallel sequencing",
-		#      Genome Research, 2009. https://doi.org/10.1101/gr.092924.109
-		#
-		# Examples
-		#
-		# 15% chance of choosing TRAV1-1 when selecting an alpha chain:
-		#				( 'TRAV1-1', 0.15 ),
-		# 
-		#
-		# 25% chance of choosing TRAJ22 if TRAV20 was the chosen V-segment for an alpha chain: 
-		#				('TRAV20', 'TRAJ22', 0.25),
-		#
-		# Other examples for gamma and delta regions:
-		#				( 'TRGV1', 0.30 ),
-		#				( 'TRGV4', 0.18 ),
-		#				( 'TRGV8', 0.17 ),
-		#				( 'TRDV1', 0.21 ),
-
-		VDJprobability = [];
-		
-#				( 'TRBV20-1', 0.24 ),
-#				( 'TRBV5-1', 0.125 ),
-#				( 'TRBV29-1', 0.105 ),
-#				( 'TRBV28', 0.051 ),
-#				( 'TRBV10-3', 0.045 ),
-#				( 'TRBV4-2', 0.04 ),
-				
-#				('TRBV20-1', 'TRBJ2-1', 0.17 ),
-#				('TRBV20-1', 'TRBJ1-1', 0.12 ),
-#				('TRBV20-1', 'TRBJ2-7', 0.11 ),
-#				('TRBV20-1', 'TRBJ1-5', 0.10 ),
-#				('TRBV20-1', 'TRBJ2-3', 0.09 ),
-#				('TRBV20-1', 'TRBJ2-2', 0.08 ),
-#		]
-
-		# Define our probabilities for chewback and NT addition at VDJ junction sites
-		# Probabilities are defined by index of the number of nucleotides chewed or added
-		# e.g. Vchewback[3] is the probability that 3 nucleotides will be chewed from V segments
-		#
-		# Vchewback   - Chewback for V region
-		# VJadditions - Nucleotide additions during VJ fusion (alpha/gamma chains)
-		# D5chewback  - Chewback for D region adjacent to V region
-		# D3chewback  - Chewback for D region adjacent to J region
-		# DJadditions - Nucleotide additions during DJ fusion (beta/delta chains)
-		# Jchewback   - Chewback for J region
-		#
-		# Any/all credit for these numbers go to J Freeman and R Warren for their analysis of the beta-chain TCR
-		# See: JDFreeman, RLWarren, et al "Profiling the T-cell receptor beta-chain repertoire by massively parallel sequencing",
-		#      Genome Research, 2009. https://doi.org/10.1101/gr.092924.109
-		#
-		junctionProbability = {}
-		TODODELETEme = {
-				'Vchewback' : [ 0.2384, 0.1629, 0.1008, 0.1159, 0.1359, 0.1044, 0.0743, 0.0391, 0.0152, 0.0061, 0.0043, 0.0022, 0.0004, 0.000044 ],
-				'VJaddition': [ 0.1625, 0.1179, 0.1466, 0.1403, 0.1330, 0.0817, 0.0635, 0.048, 0.0357, 0.0233, 0.0184, 0.0073, 0.0073, 0.0071, 0.0033, 0.0013, 0.0009, 0.0005, 0.0002, 0.0004, 0.0002, 0, 0.0009 ],
-				'VDaddition': [ 0.1625, 0.1179, 0.1466, 0.1403, 0.1330, 0.0817, 0.0635, 0.048, 0.0357, 0.0233, 0.0184, 0.0073, 0.0073, 0.0071, 0.0033, 0.0013, 0.0009, 0.0005, 0.0002, 0.0004, 0.0002, 0, 0.0009 ],
-				'D5chewback': [ 0.3231, 0.1683, 0.1299, 0.0746, 0.1077, 0.0555, 0.0504, 0.0444, 0.0462 ],
-				'D3chewback': [ 0.2401, 0.1621, 0.2431, 0.2072, 0.0631, 0.0355, 0.0202, 0.0133, 0.0153 ],
-				'DJaddition': [ 0.1246, 0.1035, 0.1457, 0.1466, 0.1257, 0.0975, 0.0793, 0.0389, 0.0369, 0.0227, 0.0133, 0.0164, 0.0076, 0.0135, 0.0053, 0.0060, 0.0045, 0.0045, 0.0029, 0.0020, 0.0009, 0.0005, 0.0002 ],
-				'Jchewback' : [ 0.1197, 0.0867, 0.1037, 0.0930, 0.1253, 0.1143, 0.0897, 0.0734, 0.0548, 0.0327, 0.0207, 0.0131, 0.0101, 0.0095, 0.0072, 0.0139, 0.0059, 0.0077, 0.0065, 0.0032, 0.0027, 0.0019, 0.0013, 0.0008, 0.0005 ],
-		}
-				
 		def __init__( self, log=None ):
 				# Initialize our instance variables
 				self.receptorSegment = []
 				self.geneName = []
 				self.chromosomeFile = []
 				self.setLog(log)
-				
+				self.VDJprobability = []
+				self.junctionProbability = {}
 				return
 
 
@@ -1488,24 +1424,34 @@ class tcrRepertoire:
 						if( l_scale <= 0 ):
 								raise ValueError("Invalid arguments for logisticcdf distribution.  Scale must be a positive number");
 
-						# Generate a list of logistically distributed values, with appropriate scale and cutoff values
-						probability_distribution = list()
-						while( len(probability_distribution) < len(self.repertoire) ):
-								dist = numpy.random.logistic(0, l_scale, len(self.repertoire) - len(probability_distribution) )
-								dist = dist[(dist < l_cutoff) & (dist > -1 * l_cutoff)]
-								probability_distribution.extend(dist)
+						maxDistAttempts=500
+						distAttempt=1
+						while distAttempt <= maxDistAttempts:
+								self.log.info("Attempting to fit population with logisticcdf CDF, attempt %d of %d", distAttempt, maxDistAttempts)
+								
+								# Generate a list of logistically distributed values, with appropriate scale and cutoff values
+								probability_distribution = list()
+								while( len(probability_distribution) < len(self.repertoire) ):
+										dist = numpy.random.logistic(0, l_scale, len(self.repertoire) - len(probability_distribution) )
+										dist = dist[(dist < l_cutoff) & (dist > -1 * l_cutoff)]
+										probability_distribution.extend(dist)
 
-						# Normalize our list, and find the cumulative value of the distribution
-						probability_distribution = sorted(probability_distribution)
-						min_value = abs(probability_distribution[0])
-						sum_value = 0
-						for i in range(0, len(probability_distribution)):
-								probability_distribution[i] += min_value + 1
-								sum_value += probability_distribution[i]
+								# Normalize our list, and find the cumulative value of the distribution
+								probability_distribution = sorted(probability_distribution)
+								min_value = abs(probability_distribution[0])
+								sum_value = 0
+								for i in range(0, len(probability_distribution)):
+										probability_distribution[i] += min_value + 1
+										sum_value += probability_distribution[i]
 
-						for i in range(0, len(probability_distribution)):
-								self.population[i] = int(round((probability_distribution[i] / sum_value) * self.population_size))
+								for i in range(0, len(probability_distribution)):
+										self.population[i] = int(round((probability_distribution[i] / sum_value) * self.population_size))
 
+								if self.population_size != sum(self.population):
+										distAttempt += 1
+								else:
+										break
+												
 						if self.population_size != sum(self.population):
 								self.log.warning("logisticcdf distribution encountered a rounding error when assigning %d out of %d requested cells.  This may affect the distribution in rare cases, please verify acceptable subclone populations in your STIG population file. See the manual for more details", abs(sum(self.population) - self.population_size), self.population_size)
 
