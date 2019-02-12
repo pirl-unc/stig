@@ -255,7 +255,7 @@ This option is mutually exclusive to `--degrade-phred`, `--degrade-fastq` and `-
 
 Specified by the `--degrade-phred=PHRED` option.  This uses the error probabilites speficied by the input string and applies them to the generated reads, where the error probability of the nth read in an output is given by the nth quality score of `PHRED`.  If the generated read is longer than `PHRED`, then the last quality score in `PHRED` is used for the remaining bases.  STIG uses the Illumina 1.8+ Phred+33 standard [i.e. each position must be one of: !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJ ]
 
-The `--degrade-variability` option can also be applied to introduce additional error.
+The `--degrade-variability` option can also be applied to introduce additional error, see below for more on this.
 
 This option is mutually exclusive to `--degrade-logistic`, `--degrade-fastq` and `--degrade-fastq-random`.
 
@@ -281,9 +281,9 @@ This option is mutually exclusive to `--degrade-logistic`, `--degrade-phred`, an
 
 #### 5.2.6 Degradation variability
 
-Specificed by the `--degrade-variability=N` option.  `N` should be in range (0,1).  Default is 0 (off).  This introduces variability into underlying error specified by `--degrade-logistic`, `--degrade-phred`, `--degrade-fastq`, and `--degrade-fastq-random`.  `N` is interpreted as a maximum value by which the error rate should fluctuate at each position, relative to the value of the error rate at each position.  e.g. with N = 0.01, a position with an error rate `e` will have an effective error rate in the range `e +/- e * 0.01`.
+Specificed by the `--degrade-variability=N` option.  `N` should be in range (0,1).  Default is 0 (off).  This introduces variability into underlying error specified by `--degrade-logistic`, `--degrade-phred`, `--degrade-fastq`, and `--degrade-fastq-random`.  `N` is interpreted as a maximum value by which the error rate should fluctuate at each position, relative to the value of the error rate at each position.  e.g. with N = 0.01, a position with an error rate `e` will have an effective error rate in the range `[e - e * 0.01, e + e * 0.01]`.
 
-Note that quality scores in degraded output reflect the additional variability introduced from this option on a per-position base.  Some positions may (randomly) have no extra error induced, whereas others may have up to N*100% additional error added (or subtracted).
+Note that quality scores in degraded output reflect the additional variability introduced from this option on a per-position base.  Some positions may (randomly) have no extra error induced, whereas others may have up to N*100% additional error added or subtracted.
 
 
 ### 5.3 Amplicon data

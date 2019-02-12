@@ -12,10 +12,11 @@ STIG is a tool for creating artificial T-cell repertoires and producing simulate
 
 1. A working Python 2 installation.  This has been been tested with 2.7.12 and 2.7.5.
 2. Two python package requirements: 'numpy' for numeric distributions required for making repertoires, and 'pyyaml' for unpacking the YAML-formatted TCR recombination data
+3. Reference chromosomes described below.
 
 #### Reference chromosomes
 
-STIG is distributed with allele data from IMGT, as well as reference coordinates for that allele data compatible with hg38.  You will need a copy of the hg38 chromosome 7 and 14 reference files, which may be found at <http://hgdownload.cse.ucsc.edu/goldenPath/hg38/chromosomes/>  Look for chr7.fa.gz and chr14.fa.gz
+STIG is distributed with allele data from IMGT, as well as reference coordinates for that allele data compatible with hg38.  You will need a copy of the hg38 chromosome 7 and 14 reference files, which may be found at <http://hgdownload.cse.ucsc.edu/goldenPath/hg38/chromosomes/>  Look for chr7.fa.gz and chr14.fa.gz, and unpack these into the working directory (defaults to ./data).
 
 ### Installation
 
