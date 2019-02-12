@@ -37,16 +37,8 @@ random.seed()
 parser = argparse.ArgumentParser(description = "Generate synthetic TCR read data",
 																 epilog = "Please see manual or README for further details" )
 
-parser.add_argument('allele_files', metavar='ALLELE_FILES', nargs='*',
-										help='Read TCR allele data from one or more IMGT-formatted fasta files')
-
-parser.add_argument('--chr7-filename', metavar='FILE',
-										help = "Filename of a FASTA formatted file with chromosome 7 reference data")
-parser.add_argument('--chr14-filename', metavar='FILE',
-										help = "Filename of a FASTA formatted file with chromosome 7 reference data")
-
-parser.add_argument('--tcell-data', metavar='FILE',
-										help = "Filename of a tab-separated file with T cell receptor segments and reference gene coordinates")
+parser.add_argument('working_dir', metavar='WORKING_DIR', nargs='?', default='data',
+										help="Directory with tcell_receptor.tsv, tcell_recombination.yaml, reference chromosome(s), & allele subdir.  Default is 'data'")
 
 parser.add_argument("--output", metavar='BASENAME', default='stig.out',
 										help='Basename for output files, e.g. \'--output=foo\' will write to \'foo.fastq\', \'foo.statistics.csv\', etc.  Default is \'stig.out\'')
@@ -63,15 +55,17 @@ parser.add_argument('--repertoire-chain-unique', action = 'store_true',
 parser.add_argument('--repertoire-cdr3-unique', action = 'store_true',
 										help = "Force each CDR3 of each chain to be unique on the nucleotide level.  Implies unique TCRs as per --repertoire-unique and unique chains as per --repertoire-chain-unique.  Note this may cause performance issues as repertoire size increases.  Default is to allow collisons")
 parser.add_argument('--population-size', metavar='N', type=int, default=100,
-										help='The number of T-cells in the repertoire (e.g. if repertoire-size=5 and population-size=15, then there are, on average, 3 clones of each unique TCR clonotype).  Default is 100')
-parser.add_argument('--population-distribution', choices = ['gaussian', 'chisquare', 'stripe', 'equal'], default='gaussian',
-										help = 'Population distribution function.  This defines the function used to distribute the population among the repertoire.  Default is the (normalized) gaussian.  \'stripe\' will assign the Nth cell in the population to the (N %% repertoire-size) clonotype.  \'equal\' assigns cells in the population to each clonotype with equal probability. See --population-gaussian-parameters, --population-chisquare-parameters')
+										help='The approximate number of T-cells in the repertoire (e.g. if repertoire-size=5 and population-size=15, then there are, on average, 3 clones of each unique TCR clonotype).  Note that some population distribution options may choose slightly fewer or more "cells" depending on the particulars of the distribution. Default is 100')
+parser.add_argument('--population-distribution', choices = ['unimodal', 'chisquare', 'stripe', 'equal', 'logisticcdf'], default='logisticcdf',
+										help = 'Population distribution function.  This defines the function used to distribute the population among the repertoire.  Default is the logistic CDF, approximating a normalized distribution of TCR subclone population sizes.  \'stripe\' will assign the Nth cell in the population to the (N %% repertoire-size) clonotype.  \'equal\' assigns cells in the population to each clonotype with equal probability. \'unimodal\' produces a small set of clones with high population sizes relative to the others.  See --population-unimodal-parameters, --population-chisquare-parameters, --population-logisticcdf-parameters')
 
 parserGroup1 = parser.add_mutually_exclusive_group()
-parserGroup1.add_argument('--population-gaussian-parameters', metavar='N', type=float, default=3.0,
-													help='Parameter for the normalized gaussian distribution.  The number of standard deviations to include in our population distribution.  Decimal value.  Default is 3')
+parserGroup1.add_argument('--population-unimodal-parameters', metavar='N', type=float, default=3.0,
+													help='Parameter for the unimodal population.  The width of the peak is defined by number of standard deviations to include in our population distribution.  Decimal value.  Default is 3')
 parserGroup1.add_argument('--population-chisquare-parameters', metavar='k:cutoff', default='2:8',
-													help='Parameters for the chi-square distribution.  Takes an argument formatted as \'k:cutoff\', where k - degrees of freedom.  Default is 3. cutoff - X-axis maximum.  Default is 8')
+													help='Parameters for the chi-square distribution.  Takes an argument formatted as \'k:cutoff\', where k - degrees of freedom.  Default is 3. cutoff - X-axis +/- maximum.  Default is 8')
+parserGroup1.add_argument('--population-logisticcdf-parameters', metavar='s:cutoff', default='1:3',
+													help='Parameter for the logistic cumulative distribution function.  Takes an argument formatted as \'s:cutoff\', where s - logistic scale.  Default is 1.  cutoff - X-axis +/- maximum.  Default is 3')
 
 parser.add_argument('--read-type', choices = ['paired', 'single', 'amplicon'], default = 'single',
 										help='Generate either single, paired-end, or amplicon reads.  Default is single')
@@ -208,15 +202,6 @@ elif args.display_degradation is True:
 		raise ValueError("--display-degradation requires a degradation method.  See --degrade-logistic, --degrade-phred under help")
 
 
-#  Make sure we have the necessary options given to generate synthetic reads
-if( args.chr7_filename  is None or
-		args.chr14_filename is None or
-		args.tcell_data     is None or
-		args.allele_files   is None ):
-		log.critical("Required command-line options missing (chr7-filename, chr14-filename, tcell-data or allele files).  See --help")
-		exit(-10)
-
-		
 # Throw some warnings based on unusual command-line options
 if( args.read_length_mean > args.insert_length_mean ):
 		log.warning("Insert length mean is less than read length mean, this may significantly increase read generation time.  Please ensure this is intentional.")
@@ -224,9 +209,8 @@ if( args.read_length_mean > args.insert_length_mean ):
 		
 # Create our configuration object
 my_configuration = stigtools.tcrConfig(log=log.getChild('tcrConfig'))
-my_configuration.readTCRConfig(args.tcell_data)
-my_configuration.readAlleles( args.allele_files )
-my_configuration.setChromosomeFiles(chr7=args.chr7_filename, chr14=args.chr14_filename)
+my_configuration.setWorkingDir(args.working_dir)
+
 
 
 # Load our TCR repertoire from file, if requested
@@ -248,8 +232,8 @@ else:
 																						log=log.getChild('tcrRepertoire'))
 
 		# Populate the repertiore
-		if args.population_distribution == 'gaussian':
-				my_repertoire.populate(args.population_size, 'gaussian', g_cutoff = args.population_gaussian_parameters)
+		if args.population_distribution == 'unimodal':
+				my_repertoire.populate(args.population_size, 'unimodal', g_cutoff = args.population_unimodal_parameters)
 		elif args.population_distribution == 'chisquare':
 				matches = re.match('^((?:\d+)|(?:\d*.\d+)):((?:\d+)|(?:\d*.\d+))$', args.population_chisquare_parameters)
 				if( matches is not None and
@@ -257,7 +241,15 @@ else:
 						k, cutoff = matches.groups()
 						my_repertoire.populate(args.population_size, 'chisquare', cs_k=float(k), cs_cutoff=float(cutoff))
 				else:
-						raise ValueError("Invalid chi-square parameters: %s" % args.population_chisquare_parameters)
+						raise ValueError("Invalid format for chi-square parameters: %s" % args.population_chisquare_parameters)
+		elif args.population_distribution == 'logisticcdf':
+				matches = re.match('^((?:\d+)|(?:\d*.\d+)):((?:\d+)|(?:\d*.\d+))$', args.population_logisticcdf_parameters)
+				if( matches is not None and
+						len(matches.groups()) == 2 ):
+						scale, cutoff = matches.groups()
+						my_repertoire.populate(args.population_size, 'logisticcdf', l_scale=float(scale), l_cutoff=float(cutoff))
+				else:
+						raise ValueError("Invalid format for logisticcdf parameters: %s" % args.population_logisticcdf_parameters)
 		else:
 				my_repertoire.populate(args.population_size, args.population_distribution)
 
