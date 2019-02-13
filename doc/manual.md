@@ -1,7 +1,7 @@
 STIG: Synthetic TCR Informatics Generator
 =========================================
 
-Current for v0.5.1
+Current for v0.5.2
 
 Table of contents
 -----------------
