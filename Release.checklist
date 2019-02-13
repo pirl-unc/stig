@@ -22,11 +22,13 @@ REMOVALS AND master MERGE:
 [] - git rm branch.info
 [] - git rm Release.checklist
 [] - git rm Makefile
+[] - git rm TODO
 [] - git commit -a -m "File removal in preparation for release"
 [] - git checkout master
 [] - git merge --no-ff release-x.y.z
 
 TAG AND DELETE RELEASE BRANCH
+[] - git push origin
 [] - git tag x.y.z
 [] - git push origin --tags
 [] - git branch -d release-x.y.z

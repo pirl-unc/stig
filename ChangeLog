@@ -67,4 +67,8 @@
 * Removed reference chromosome files for storage limitations
 
 ## STIG [0.5.2]: 2019-2-13
-* Updated documentation to better reflect working directory structure 
+* Updated documentation to better reflect working directory structure
+
+## STIG [xxx]: xxx
+* Updated documentation: amplicon probe disclaimer, formatting changes
+* Updated release script in develop branch to fail when git has non-zero exit status

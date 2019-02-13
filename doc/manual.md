@@ -34,7 +34,7 @@ STIG is a tool for creating artificial T-cell repertoires and producing simulate
 
 STIG utilizes a number of underlying assumptions when reading input and output data:
 
-1. Quality strings are Phred+33 (Illumina 1.8+) format: (0,41) or (!, J), with J being highest quality
+1. Quality strings are Phred+33 (Illumina 1.8+) format: [0,41] or [!, J], with J being highest quality
 2. DNA and RNA inputs and outputs are 5' --> 3' direction, even when generating paired end reads or specififying amplicon probes
 
 
@@ -293,7 +293,7 @@ Note that quality scores in degraded output reflect the additional variability i
 
 Amplicon sequencing uses a "priming" string to anchor reads near an area of interest, thus enriching the read depth at that location (versus standard single or pair-end sequencing).  This technique is commonly used in T-cell repertoire analysis to target the V/D/J recombination portion.
 
-Amplicon probes are always given in a 5' --> 3' direction.  STIG will generate reads in the 3' direction from the amplicon probe, and supports reverse-strand matching.  The read length for amplicon sequencing can be specified by the --read-length parameters -- although note that in practice, most amplicon reads will be long enough to cover the entire mRNA from the probe location into the UTR.  In STIG's amplicon sequencing, a second "paired" read is generated which is simply the complement of the original strand.
+Amplicon probes are always given in a 5' --> 3' direction.  STIG will generate reads in the 3' direction from the amplicon probe, and supports reverse-strand matching.  The read length for amplicon sequencing can be specified by the `--read-length parameters` -- although note that in practice, most amplicon reads will be long enough to cover the entire mRNA from the probe location into the UTR.  In STIG's amplicon sequencing, a second "paired" read is generated which is simply the complement of the original strand.
 
 #### 5.3.1 Forward strand example 
 
@@ -350,7 +350,7 @@ The default value for --amplicon-probe option is a 27-mer that anchors on the re
 
 Here is a slightly longer probe that anchors on the reverse strand of EX1 of the C-region on alpha chains, about ~510nt from the V-region start codon: `AGAATCCTTACTTTGTGACACATTTGTTTGAGA`
 
-These values have only undergone limited testing within STIG, and may not function as intended in any wet-lab/in-vitro setting.
+These values have only undergone limited testing within STIG, and may not function as intended outside of this setting.
 
 
 ### 5.4 Defining T-cell repertoires
