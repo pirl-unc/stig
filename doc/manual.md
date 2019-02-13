@@ -1,7 +1,7 @@
 STIG: Synthetic TCR Informatics Generator
 =========================================
 
-Current for v0.5.1
+Current for v0.5.2
 
 Table of contents
 -----------------
@@ -24,7 +24,7 @@ STIG - Synthetic TCR Informatics Generator
 ## 2. SYNOPSIS
 
 
-  ./lib/stig [options] [allele fasta files]
+  ./lib/stig [options] [working_dir]
 
 ## 3. DESCRIPTION
 
@@ -213,11 +213,10 @@ Please see manual or README for further details
 
 ## 4.1 Options overview
 
-The majority of options fall into a few broad categories:
+The majority of options fall into two broad categories:
 
-1. File input/output options, which determine how alleles, reference chromosomes, and T cell receptor reference data is stored
-2. Generation of the T cell receptor repertoire.  Determines what types and how many T cell receptors are created
-3. Data generation, which controls if reads are DNA or RNA space, and the read depth, read length, etc. of those reads.  Options also exist to 'degrade' the data in a manner that simlulates less-than-perfect read quality
+1. Generation of the T cell receptor repertoire.  Determines what types and how many T cell receptors are created
+2. Data generation, which controls if reads are DNA or RNA space, and the read depth, read length, etc. of those reads.  Options also exist to 'degrade' the data in a manner that simlulates less-than-perfect read quality
 
 
 ## 5. INVOCATION
@@ -225,10 +224,14 @@ The majority of options fall into a few broad categories:
 ### 5.1 Quick usage
 
 	./lib/stig --repertoire-size=100 --population-size 10000 --output=devel --sequence-count=0 ./data
-Will create a STIG population of 100 subclones consisting of 10000 virtual cells in total, based on alleles and reference chromosomes in the `./data` directory.  Population and statistics will be saved in devel.* files (`--output=devel`).  No output sequences are generated (`--sequence-count=0`).
+Will create a STIG population of 100 subclones consisting of 10000 virtual cells in total, based on alleles and reference chromosomes in the working directory (`./data`, by default).  Population and statistics will be saved in `devel.population.bin` & `devel.statistics.tsv` files (`--output=devel`).  No output sequences are generated (`--sequence-count=0`).
 
 	./lib/stig --load-population=devel.population.bin --read-type=paired --sequence-type=rna --sequence-count 50000000 ./data
 Generate 50 million paired-end reads in RNA-space from the previously saved population(`--load-population=devel.population.bin`).  The default paired end options will define the characteristics of the paired reads (e.g. average read and insert length).
+
+	./lib/stig --repertoire-size=100 --population-size 10000 --output=devel --read-type=paired --sequence-type=rna --sequence-count=50000000 ./data
+This combines the two previous commands into a single step.
+
 
 
 ### 5.2 Degrading reads
