@@ -65,3 +65,6 @@
 
 ## STIG [0.5.1]: 2019-2-12
 * Removed reference chromosome files for storage limitations
+
+## STIG [0.5.2]: 2019-2-13
+* Updated documentation to better reflect working directory structure 
