@@ -24,7 +24,7 @@ STIG - Synthetic TCR Informatics Generator
 ## 2. SYNOPSIS
 
 
-  ./lib/stig [options] [working_dir]
+  ./lib/stig [options] working_dir
 
 ## 3. DESCRIPTION
 
@@ -45,8 +45,8 @@ usage: stig [-h] [--output BASENAME] [--load-population FILE]
             [--repertoire-size N] [--repertoire-unique]
             [--repertoire-chain-unique] [--repertoire-cdr3-unique]
             [--population-size N]
-            [--population-distribution {gaussian,chisquare,stripe,equal,logisticcdf}]
-            [--population-gaussian-parameters N | --population-chisquare-parameters k:cutoff | --population-logisticcdf-parameters s:cutoff]
+            [--population-distribution {unimodal,chisquare,stripe,equal,logisticcdf}]
+            [--population-unimodal-parameters N | --population-chisquare-parameters k:cutoff | --population-logisticcdf-parameters s:cutoff]
             [--read-type {paired,single,amplicon}] [--sequence-type {dna,rna}]
             [--sequence-count N] [--read-length-mean READ_LENGTH_MEAN]
             [--read-length-sd READ_LENGTH_SD] [--read-length-sd-cutoff N]
@@ -58,14 +58,15 @@ usage: stig [-h] [--output BASENAME] [--load-population FILE]
             [--degrade-variability FLOAT] [--display-degradation]
             [--receptor-ratio RATIO]
             [--log-level {debug,info,warning,error,critical}]
-            [WORKING_DIR]
+            WORKING_DIR
 
 Generate synthetic TCR read data
 
 positional arguments:
-  WORKING_DIR           Directory with tcell_receptor.tsv, 
-                        tcell_recombination.yaml, reference chromosome(s),
-                        & allele subdir.  Default is 'data'
+  WORKING_DIR           Directory with tcell_receptor.tsv,
+                        tcell_recombination.yaml, reference chromosome(s), &
+                        allele subdir. Try STIG's H. sapiens directory named
+                        'data'
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -97,21 +98,24 @@ optional arguments:
                         options may choose slightly fewer or more "cells"
                         depending on the particulars of the distribution.
                         Default is 100
-  --population-distribution {gaussian,chisquare,stripe,equal,logisticcdf}
+  --population-distribution {unimodal,chisquare,stripe,equal,logisticcdf}
                         Population distribution function. This defines the
                         function used to distribute the population among the
-                        repertoire. Default is the (normalized) gaussian.
-                        'stripe' will assign the Nth cell in the population to
-                        the (N % repertoire-size) clonotype. 'equal' assigns
-                        cells in the population to each clonotype with equal
-                        probability. 'logisticcdf' uses the logistic
-                        cumulative distribution. See --population-gaussian-
+                        repertoire. Default is the logistic CDF, approximating
+                        a normalized distribution of TCR subclone population
+                        sizes. 'stripe' will assign the Nth cell in the
+                        population to the (N % repertoire-size) clonotype.
+                        'equal' assigns cells in the population to each
+                        clonotype with equal probability. 'unimodal' produces
+                        a small set of clones with high population sizes
+                        relative to the others. See --population-unimodal-
                         parameters, --population-chisquare-parameters,
                         --population-logisticcdf-parameters
-  --population-gaussian-parameters N
-                        Parameter for the normalized gaussian distribution.
-                        The number of standard deviations to include in our
-                        population distribution. Decimal value. Default is 3
+  --population-unimodal-parameters N
+                        Parameter for the unimodal population. The width of
+                        the peak is defined by number of standard deviations
+                        to include in our population distribution. Decimal
+                        value. Default is 3
   --population-chisquare-parameters k:cutoff
                         Parameters for the chi-square distribution. Takes an
                         argument formatted as 'k:cutoff', where k - degrees of
@@ -432,7 +436,7 @@ Each V-region consists of three major components, defined by coordinates in the 
 
 ##### C-Region Definition
 
-The C-region is composed of a large segment with multiple (3 or 4, in humans) exons.  Because the C-region starts with the first exon and ends with the last, STIG requires the start and end coordinates of each exon, defined as segments EX1, EX2, EX3, and (sometimes) EX4.  These coordinates are used to splice in exon allele data.
+The C-region is composed of a large segment with multiple (3 or 4, in humans) exons.  Because the C-region spans multiple exons, STIG requires the start and end coordinates of each exon, defined as segments EX1, EX2, EX3, and (sometimes) EX4.  These coordinates are used to splice in exon allele data.
 
 ###### D and J-Region Definition
 
@@ -475,4 +479,4 @@ There currently is not a way to change/update this, and modifying the chromosome
 
 3. The handling of C-region alleles is semi-functional.  In RNA, an allele for each exon are randomly pulled when requested (e.g. Requesting EX1 of TRBC1*01 will return either EX1 of TRBC1*01 or EX1 of TRBC1*02).  In DNA, the alleles are not used at all (data is instead pulled from the chromosome file).  The complexity of code needed to splice in multiple exon alleles is nontrivial, and the C-regions aren't highly utilized in TCR reconstruction and analysis, in any event.  A fix can be implemented if there is sufficient demand.  A workaround for this is to only have a single allele for each C region, and ensure this allele matches the reference chromosomes: this ensures that all C-regions will have the same exonic sequences in DNA and RNA.
 
-4. Similar to the above C-region alleles, there are no alleles for L-PART1, L-PART2, or the DNA-space of the V-region intron.  Thus, these nucleotides are pulled directly from the reference chromosome when simulating DNA sequencing data.  There's a fair bit of complexity in providing this functionality, and this region does not contribute to TCR diversity or functionality.  A fix can be implemented if there is sufficient demand.
+4. Similar to the above C-region alleles, there are no alleles for L-PART1, L-PART2, or the DNA-space of the V-region intron.  Thus, these nucleotides are pulled directly from the reference chromosome when simulating DNA sequencing data.  There's a fair bit of complexity in providing this functionality, and this region likely does not contribute much to TCR diversity or functionality.  A fix can be implemented if there is sufficient demand.

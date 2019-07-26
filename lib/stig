@@ -37,8 +37,8 @@ random.seed()
 parser = argparse.ArgumentParser(description = "Generate synthetic TCR read data",
 																 epilog = "Please see manual or README for further details" )
 
-parser.add_argument('working_dir', metavar='WORKING_DIR', nargs='?', default='data',
-										help="Directory with tcell_receptor.tsv, tcell_recombination.yaml, reference chromosome(s), & allele subdir.  Default is 'data'")
+parser.add_argument('working_dir', metavar='WORKING_DIR', type=str,
+										help="Directory with tcell_receptor.tsv, tcell_recombination.yaml, reference chromosome(s), & allele subdir.  Try STIG's H. sapiens directory named 'data'")
 
 parser.add_argument("--output", metavar='BASENAME', default='stig.out',
 										help='Basename for output files, e.g. \'--output=foo\' will write to \'foo.fastq\', \'foo.statistics.csv\', etc.  Default is \'stig.out\'')
@@ -216,7 +216,7 @@ my_configuration.setWorkingDir(args.working_dir)
 # Load our TCR repertoire from file, if requested
 my_repertoire = None
 if args.load_population is not None:
-		print("Using previously saved T-cell population from %s, ignoring any --population... or --repertoire... options and using the settings from the saved file" % args.load_population)
+		log.warning("Using previously saved T-cell population from %s, ignoring any --population... or --repertoire... options and using the settings from the saved file" % args.load_population)
 		with open(args.load_population, 'rb') as fp:
 				my_repertoire = cPickle.load(fp)
 				my_repertoire.thaw(log=log.getChild('tcrRepertoire'), config=my_configuration)

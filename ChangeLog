@@ -73,3 +73,8 @@
 * Updated documentation: amplicon probe disclaimer, formatting changes
 * Updated release script in develop branch to fail when git has non-zero exit status
 * Fixed typo in header of statistics.csv file (J_ALLELE_2 instead of JALLELE_2, as intended)
+
+## STIG [***]: ***
+* Moved the warning message ("... ignoring any --population and --repertoire...") that appears when loading populations (--load-population) from stderr to STIG's log facility at 'warning' level
+* Removed the default value for WORKING_DIR in the command line options.  As all options have defaults, invoking STIG successfully without any command line options seemed strange.
+* Updated manual to clarify language around V-region intron handling
