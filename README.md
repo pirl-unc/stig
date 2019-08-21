@@ -16,7 +16,7 @@ STIG is a tool for creating artificial T-cell repertoires and producing simulate
 
 #### Reference chromosomes
 
-STIG is distributed with allele data from IMGT, as well as reference coordinates for that allele data compatible with hg38.  You will need a copy of the hg38 chromosome 7 and 14 reference files, which may be found at <http://hgdownload.cse.ucsc.edu/goldenPath/hg38/chromosomes/>  Look for `chr7.fa.gz` and `chr14.fa.gz`, and unpack these into the working directory (defaults to `./data`).
+STIG is distributed with allele data from IMGT, as well as reference coordinates for that allele data compatible with hg38.  You will need a copy of the hg38 chromosome 7 and 14 reference files, which may be found at <http://hgdownload.cse.ucsc.edu/goldenPath/hg38/chromosomes/>  Look for `chr7.fa.gz` and `chr14.fa.gz`, and unpack these into your working directory (defaults to `data`).
 
 ### Installation
 
@@ -39,9 +39,11 @@ DOCUMENTATION
 Documentation for the most recent version is available on the project website.  A [copy of the manual](doc/manual.md) is included in each version as Markdown-formatted text.
 
 
-LICENSE
+COPYRIGHT AND LICENSE
 -------
-STIG is licensed for non-commercial research purposes only - see LICENSE.txt for full license
+This software is copyright (C) 2019 The University of North Carolina at Chapel Hill.
+
+STIG is free sofware licensed under the GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 
 T-cell segment allele files are copyright IMGT(R), and for academic research only.  Please note that some of these files have been modified for the purposes of STIG: See the manual for details.
 - IMGT(R), the international ImMunoGeneTics information system(R) http://www.imgt.org (founder and director: Marie-Paule Lefranc, Montpellier, France)
