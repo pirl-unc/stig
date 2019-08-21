@@ -91,7 +91,7 @@ EOF
 	    echo -ne "Tagging release and pushing to remote\nPress [ENTER] to continue"
 	    read -r TRASH
 
-	    git push origin || echo "Error: Command failed" && exit
+	    git push origin || { echo "Error: Command failed" && exit 1; }
 	    git tag $RELEASE_VERSION || { echo "Error: Command failed" && exit 1; }
 	    git push origin --tags || { echo "Error: Command failed" && exit 1; }
 	    
