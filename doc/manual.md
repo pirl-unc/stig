@@ -483,4 +483,6 @@ Bug report can be filed under the project page on GitHub.
 
 ## 10. COPYRIGHT
 
-Copyright (C) 2019 The University of North Carolina at Chapel Hill.  License: GPLv3+: GNU  GPL  version  3  or  later http://gnu.org/licenses/gpl.html  This is free software: you are free to change and redistribute it.  There is NO WARRANTY, to the extent permitted by law.
+Copyright (C) 2019 The University of North Carolina at Chapel Hill.  
+
+License: GPLv3+: GNU  GPL  version  3  or  later http://gnu.org/licenses/gpl.html  This is free software: you are free to change and redistribute it.  There is NO WARRANTY, to the extent permitted by law.
