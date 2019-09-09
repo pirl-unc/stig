@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python3
 
 
 # STIG - Generate synthetic T-cell receptor reads in DNA and RNA
@@ -10,15 +10,11 @@ import sys
 import re
 import random
 import argparse
-from string import maketrans
-from itertools import ifilter
-from itertools import ifilterfalse
 import logging
 import math
-import cPickle
+import pickle
 
 import stigtools
-
 
 # Configure our logging
 log = logging.getLogger('main')
@@ -218,7 +214,7 @@ my_repertoire = None
 if args.load_population is not None:
 		log.warning("Using previously saved T-cell population from %s, ignoring any --population... or --repertoire... options and using the settings from the saved file" % args.load_population)
 		with open(args.load_population, 'rb') as fp:
-				my_repertoire = cPickle.load(fp)
+				my_repertoire = pickle.load(fp)
 				my_repertoire.thaw(log=log.getChild('tcrRepertoire'), config=my_configuration)
 
 else:
@@ -381,7 +377,7 @@ if args.load_population is None:
 		# Write our repertoire object to a file
 		populationFilename = args.output + '.population.bin'
 		with open(populationFilename, 'wb') as fp:
-				cPickle.dump(my_repertoire.freeze(), fp)
+				pickle.dump(my_repertoire.freeze(), fp)
 
 
 log.info("All actions complete")

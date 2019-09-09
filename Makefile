@@ -14,7 +14,6 @@ TCR_OPTS=\
 --read-length-mean=80 \
 --read-length-sd=0
 
-
 AMPLICON_OPTS=\
 --read-type=amplicon \
 --sequence-type=rna \
@@ -81,13 +80,7 @@ test_basic: devel.population.bin
 test_generate:
 	./lib/stig --repertoire-size=1 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
 	./lib/stig --repertoire-size=10 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
-	./lib/stig --repertoire-size=10 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
-	./lib/stig --repertoire-size=10 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
-	./lib/stig --repertoire-size=10 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
 	./lib/stig --repertoire-size=100 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
-	./lib/stig --repertoire-size=500 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
-	./lib/stig --repertoire-size=500 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
-	./lib/stig --repertoire-size=500 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
 	./lib/stig --repertoire-size=500 --population-size=100000 --sequence-count=0 $(BASE_OPTS)
 
 test_degrade: display_degradation degrade_fastq
@@ -99,7 +92,7 @@ test_amplicon: devel.population.bin
 
 
 display_degradation:
-	./lib/stig --degrade-phred='555555555555' --degrade-variability=0.5 --display-degradation > /dev/null
+	./lib/stig --degrade-phred='555555555555' --degrade-variability=0.5 --display-degradation $(BASE_OPTS) > /dev/null
 
 clean:
 	rm -f stig.out*.fastq devel*.fastq devel.statistics.csv devel.population.bin
