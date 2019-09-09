@@ -1,5 +1,4 @@
 import re
-import string
 import logging
 import random
 import math
@@ -143,7 +142,7 @@ class tcrConfig:
 				#
 #				print(yaml.dump({'recombination': self.VDJprobability, 'junction': self.junctionProbability}))
 				with open("%s/tcell_recombination.yaml" % dirname) as fp:
-						rawDat = yaml.load(fp)
+						rawDat = yaml.load(fp, Loader = yaml.FullLoader)
 				self.VDJprobability = rawDat['segments']
 				self.junctionProbability = rawDat['recombination']
 				
@@ -268,8 +267,8 @@ class tcrConfig:
 												if re.match('^(V-REGION|J-REGION|EX\d|D-REGION|L-PART1\+L-PART2)$', region):
 														gene, allele_name = matches.groups()
 														
-														segments = filter(lambda e:e['gene'] == gene and e['region'] == region,
-																							self.receptorSegment)
+														segments = list(filter(lambda e:e['gene'] == gene and e['region'] == region,
+																							self.receptorSegment))
 														if( len(segments) is 1 ):
 																self.log.debug("Found %s for %s*%s", region, gene, allele_name)
 
@@ -329,7 +328,7 @@ class tcrConfig:
 						exit(-10)
 
 				# Check if this chromosome was previously initialized
-				if( len(filter(lambda x: x['chromosome'] == chrNum, self.chromosomeFile)) > 0 ):
+				if( len(list(filter(lambda x: x['chromosome'] == chrNum, self.chromosomeFile))) > 0 ):
 						self.log.error("Attempted to re-register previously initialized chromosome #%s", chrNum)
 
 				# Ensure file exists before proceeding
@@ -364,7 +363,7 @@ class tcrConfig:
 				if start <= 0 or end <= 0:
 						raise ValueError("Stard and end values must be non-zero integers")
 
-				chromosomeStruct = filter(lambda x: x['chromosome'] == chromosome, self.chromosomeFile)
+				chromosomeStruct = list(filter(lambda x: x['chromosome'] == chromosome, self.chromosomeFile))
 				
 				if( len(chromosomeStruct) == 0 ):
 						self.log.critical('Chromosome %s has not been previously initialized with setChromosomeFile()', chromosome)
@@ -404,7 +403,7 @@ class tcrConfig:
     # A string with complementary DNA nucleotides (CTUAG -> GAATC), reversed from the input value
     # 
 		def reverseComplement(self, value):
-				value = value.translate(string.maketrans('CTUAG', 'GAATC'))
+				value = value.translate(str.maketrans('CTUAG', 'GAATC'))
 				value = value[::-1]
 				return value
 		
@@ -557,7 +556,7 @@ class tcrConfig:
 						cumulativeProbability += probability
 						self.log.debug("Examining %s, cumulative: %0.3f", i, cumulativeProbability)
 						if rand < cumulativeProbability:
-								alleles = self.receptorSegment[segmentIndex]['allele'].keys()
+								alleles = list(self.receptorSegment[segmentIndex]['allele'].keys())
 								self.log.debug("Allele choices: %s", ', '.join(alleles))
 								random.shuffle(alleles)
 								allele = alleles[0]
@@ -668,8 +667,8 @@ class tcrConfig:
 		    # We need to locate the corresponding L-V-GENE-UNIT to locate our start codon
 				dnaStartPosition = None
 				dnaEndPosition = None
-				geneUnits = filter(lambda x:x['gene'] == self.receptorSegment[vIndex]['gene'] and
-																	 re.match('^L-V-GENE-UNIT$', x['region']), self.receptorSegment)
+				geneUnits = list(filter(lambda x:x['gene'] == self.receptorSegment[vIndex]['gene'] and
+																	 re.match('^L-V-GENE-UNIT$', x['region']), self.receptorSegment))
 				if len(geneUnits) == 0:
 						self.log.critical("No corresponding GENE-UNIT found for gene %s", self.receptorSegment[segmentIndex]['gene'])
 						exit(-10)
@@ -805,8 +804,8 @@ class tcrConfig:
 				if re.match('^[VDJ]-REGION', self.receptorSegment[segmentIndex]['region'] ):
 						# Replace the V-REGION and L-PART1+L-PART2 sequences within the GENE-UNIT sequence
 						if self.receptorSegment[segmentIndex]['region'] == 'V-REGION':
-								geneUnits = filter(lambda x:x['gene'] == self.receptorSegment[segmentIndex]['gene'] and
-																	 re.match('^(L-V|D|J)-GENE-UNIT$', x['region']), self.receptorSegment)
+								geneUnits = list(filter(lambda x:x['gene'] == self.receptorSegment[segmentIndex]['gene'] and
+																	 re.match('^(L-V|D|J)-GENE-UNIT$', x['region']), self.receptorSegment))
 								if len(geneUnits) == 0:
 										self.log.critical("No corresponding GENE-UNIT found for gene %s", self.receptorSegment[segmentIndex]['gene'])
 										exit(-10)
@@ -838,13 +837,13 @@ class tcrConfig:
 								self.log.debug("Tail:   %s", geneData[geneHeaderLength+geneAlleleLength:])
 								dnaData = geneData[0:geneHeaderLength] + self.receptorSegment[segmentIndex]['allele'][segmentAllele]
 								# Now substitute the L-PART allele in RNA (as the geneHeader portion has an intron in it)
-								lPartSegments = filter(lambda x:x['gene'] == self.receptorSegment[segmentIndex]['gene'] and
-																			 x['region'] == 'L-PART1+L-PART2', self.receptorSegment)
+								lPartSegments = list(filter(lambda x:x['gene'] == self.receptorSegment[segmentIndex]['gene'] and
+																			 x['region'] == 'L-PART1+L-PART2', self.receptorSegment))
 								if len(lPartSegments) == 1:
 										if segmentAllele in lPartSegments[0]['allele']:
 												rnaData = lPartSegments[0]['allele'][segmentAllele] + self.receptorSegment[segmentIndex]['allele'][segmentAllele]
 										else:
-												rnaData = lPartSegments[0]['allele'][random.choice(lPartSegments[0]['allele'].keys())] + self.receptorSegment[segmentIndex]['allele'][segmentAllele]
+												rnaData = lPartSegments[0]['allele'][random.choice(list(lPartSegments[0]['allele'].keys()))] + self.receptorSegment[segmentIndex]['allele'][segmentAllele]
 										
 								else:
 										self.log.error("Did not find matching L-PART segment for this V-REGION")
@@ -872,19 +871,19 @@ class tcrConfig:
 						cStartPosition = None
 						cEndPosition = None
 						rnaData = ['', '', '', '']
-						for i in filter(lambda j:re.match('^EX\d$', j['region']) and j['gene'] == self.receptorSegment[segmentIndex]['gene'], self.receptorSegment):
-								if i['start_position'] < cStartPosition or cStartPosition is None:
+						for i in list(filter(lambda j:re.match('^EX\d$', j['region']) and j['gene'] == self.receptorSegment[segmentIndex]['gene'], self.receptorSegment)):
+								if cStartPosition is None or i['start_position'] < cStartPosition:
 										cStartPosition = i['start_position']
-								if i['end_position'] > cEndPosition or cEndPosition is None:
+								if cEndPosition is None or i['end_position'] > cEndPosition:
 										cEndPosition = i['end_position']
 								if i['region'] == 'EX1':
-										rnaData[0] = i['allele'][random.choice(i['allele'].keys())]
+										rnaData[0] = i['allele'][random.choice(list(i['allele'].keys()))]
 								if i['region'] == 'EX2':
-										rnaData[1] = i['allele'][random.choice(i['allele'].keys())]
+										rnaData[1] = i['allele'][random.choice(list(i['allele'].keys()))]
 								if i['region'] == 'EX3':
-										rnaData[2] = i['allele'][random.choice(i['allele'].keys())]
+										rnaData[2] = i['allele'][random.choice(list(i['allele'].keys()))]
 								if i['region'] == 'EX4' and 'allele' in i:
-										rnaData[3] = i['allele'][random.choice(i['allele'].keys())]
+										rnaData[3] = i['allele'][random.choice(list(i['allele'].keys()))]
 						rnaData = ''.join(rnaData)
 						#self.log.debug("Returning RNA: %s", rnaData)
 						dnaData = self.readChromosome(chromosome, cStartPosition, cEndPosition, self.receptorSegment[segmentIndex]['strand'])
@@ -1070,8 +1069,7 @@ class tcr:
 
 				self.setLog(log)
 
-				if( AB_frequency >= 0 and
-						AB_frequency <= 1):
+				if( AB_frequency >= 0 and AB_frequency <= 1):
 						self.AB_frequency = AB_frequency
 				else:
 						raise ValueError("AB_frequency must be in range [0, 1]")
@@ -1220,7 +1218,7 @@ class tcrRepertoire:
 				self.setLog(log)
 
 				self.log.info("tcrRepertoire()::__init__ called with size %d, AB ratio %f, unique chains %s, unique CDR3 %s", size, AB_frequency, uniqueChain, uniqueTCR)
-			 	self.AB_frequency = AB_frequency
+				self.AB_frequency = AB_frequency
 				self.repertoire = [None] * size
 				for i in range(0, size):
 						self.log.debug("Generating repertoire bucket %d of %d", i + 1, size)
