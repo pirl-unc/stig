@@ -79,3 +79,6 @@
 * Removed the default value for WORKING_DIR in the command line options.  As all options have defaults, invoking STIG successfully without any command line options seemed strange.
 * Updated manual to clarify language around V-region intron handling
 * Changed license to GPL version 3 
+
+## STIG [*.*.*]: 2019-09-9
+* Code ported to python 3
