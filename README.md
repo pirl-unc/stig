@@ -9,15 +9,18 @@ STIG is a tool for creating artificial T-cell repertoires and producing simulate
 
 ## Getting started
 ### Prerequisites
-A working Python 2 installation.  This has been been tested with 2.7.12 and 2.7.5.  The python package 'numpy' is required, as this generates numeric distributions required for making repertoires.
+
+1. A working Python 2 installation.  This has been been tested with 2.7.12 and 2.7.5.
+2. Two python package requirements: 'numpy' for numeric distributions required for making repertoires, and 'pyyaml' for unpacking the YAML-formatted TCR recombination data
+3. Reference chromosomes placed in the working directory (`data`, by default).  See "Reference chromosomes" below.
 
 #### Reference chromosomes
 
-STIG is distributed with allele data from IMGT, as well as reference coordinates for that allele data compatible with hg38.  You will need a copy of the hg38 chromosome 7 and 14 reference files, which may be found at <http://hgdownload.cse.ucsc.edu/goldenPath/hg38/chromosomes/>  Look for chr7.fa.gz and chr14.fa.gz
+STIG is distributed with allele data from IMGT, as well as reference coordinates for that allele data compatible with hg38.  You will need a copy of the hg38 chromosome 7 and 14 reference files, which may be found at <http://hgdownload.cse.ucsc.edu/goldenPath/hg38/chromosomes/>  Look for `chr7.fa.gz` and `chr14.fa.gz`, and unpack these into your working directory (defaults to `data`).
 
 ### Installation
 
-No installation is required and STIG can be run directly out of its extracted package directory.
+No installation is required. STIG can be run directly out of its extracted package directory, once the reference chromosomes are installed in the working directory.
 
 
 ### Running STIG
@@ -27,18 +30,20 @@ STIG can be called directly from its package directory.  Use `./lib/stig --help`
 LATEST VERSION
 --------------
 
-The latest release can be found at <https://github.com/Ferrantisimo/stig/releases>
+The latest release can be found at <https://github.com/vincentlaboratories/stig>
 
 
 DOCUMENTATION
 -------------
 
-Documentation for the most recent version is available on the project website.  A [copy of the manual] (doc/manual.md) is included in each version as Markdown-formatted text.
+Documentation for the most recent version is available on the project website.  A [copy of the manual](doc/manual.md) is included in each version as Markdown-formatted text.
 
 
-LICENSE
+COPYRIGHT AND LICENSE
 -------
-This project is licensed for non-commercial research purposes only - see LICENSE.txt for full license
+This software is copyright (C) 2019 The University of North Carolina at Chapel Hill.
+
+STIG is free sofware licensed under the GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 
 T-cell segment allele files are copyright IMGT(R), and for academic research only.  Please note that some of these files have been modified for the purposes of STIG: See the manual for details.
 - IMGT(R), the international ImMunoGeneTics information system(R) http://www.imgt.org (founder and director: Marie-Paule Lefranc, Montpellier, France)
@@ -47,4 +52,4 @@ CONTACT
 -------
 
 * Maintainer: Mark Woodcock <mark.woodcock@unchealth.unc.edu>
-* GitHub: 
+* GitHub: https://github.com/vincentlaboratories/stig

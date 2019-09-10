@@ -51,3 +51,34 @@
 ## STIG [0.4.3]: 2018-5-22
 * Changed extension on paired-end/amplicon fastq to match software conventions
 * Changed degraded fastq comment headers to pass through comments from non-degraded fastq
+
+## STIG [0.4.4]: 2018-9-20
+* Added command line options for stripe and flat distributions of clones
+* Updated command line help to clarify distribution options
+* Fixed issue where stripe/flat distributions were not properly recognized by populate()
+
+## STIG [0.5.0]: 2018-10-02
+* Added logisticcdf population distribution
+* Added documentation of required T-cell receptor component coordinates
+* Moved chromosome and allele files into working dir, updated code to look for required chromosome and allele files automatically based on directory structure
+* Updated documentation to reflect github address
+
+## STIG [0.5.1]: 2019-2-12
+* Removed reference chromosome files for storage limitations
+
+## STIG [0.5.2]: 2019-2-13
+* Updated documentation to better reflect working directory structure
+
+## STIG [0.5.3]: 2019-7-25
+* Updated documentation: amplicon probe disclaimer, formatting changes
+* Updated release script in develop branch to fail when git has non-zero exit status
+* Fixed typo in header of statistics.csv file (J_ALLELE_2 instead of JALLELE_2, as intended)
+
+## STIG [0.5.4]: 2019-8-21
+* Moved the warning message ("... ignoring any --population and --repertoire...") that appears when loading populations (--load-population) from stderr to STIG's log facility at 'warning' level
+* Removed the default value for WORKING_DIR in the command line options.  As all options have defaults, invoking STIG successfully without any command line options seemed strange.
+* Updated manual to clarify language around V-region intron handling
+* Changed license to GPL version 3 
+
+## STIG [*.*.*]: 2019-09-9
+* Code ported to python 3

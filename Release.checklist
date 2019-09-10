@@ -8,6 +8,8 @@ CREATE RELEASE BRANCH:
 [] - git checkout -b release-x.y.z develop
 [] - Apply any hotfixes, review documentation updates, and fix other issues here.  No new features.
 
+(n.b. release.sh will semi-automate the procedure below up to deleting the release-x.y.z branch)
+
 BUMP RELEASE NUMBERS:
 [] - ChangeLog updated with version number, release date, summary of changes
 [] - doc/manual.md updated with version number
@@ -22,11 +24,13 @@ REMOVALS AND master MERGE:
 [] - git rm branch.info
 [] - git rm Release.checklist
 [] - git rm Makefile
+[] - git rm TODO
 [] - git commit -a -m "File removal in preparation for release"
 [] - git checkout master
 [] - git merge --no-ff release-x.y.z
 
 TAG AND DELETE RELEASE BRANCH
+[] - git push origin
 [] - git tag x.y.z
 [] - git push origin --tags
 [] - git branch -d release-x.y.z

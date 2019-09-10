@@ -68,31 +68,32 @@ EOF
 	finalize_release)
 	    echo -ne "Committing version bump changes\nPress [ENTER] to continue"
 	    read -r TRASH
-	    git commit -a -m "Version bump"
+	    git commit -a -m "Version bump" || { echo "Error: Command failed" && exit 1; }
 
 	    echo -ne "Merging develop branch\nPress [ENTER] to continue"
 	    read -r TRASH
-	    git checkout develop
-	    git merge --no-ff $RELEASE_BRANCH
+	    git checkout develop || { echo "Error: Command failed" && exit 1; }
+	    git merge --no-ff $RELEASE_BRANCH || { echo "Error: Command failed" && exit 1; }
 
 	    echo -ne "Cleaning release branch and merging with master\nPress [ENTER] to continue"
 	    read -r TRASH
 
-	    git checkout $RELEASE_BRANCH
-	    git rm branch.info
-	    git rm Release.checklist
-	    git rm Makefile
-	    git rm release.sh
-	    git commit -a -m "File removal in preparation for release"
-	    git checkout master
-	    git merge --no-ff $RELEASE_BRANCH
+	    git checkout $RELEASE_BRANCH || { echo "Error: Command failed" && exit 1; }
+	    git rm branch.info || { echo "Error: Command failed" && exit 1; }
+	    git rm Release.checklist || { echo "Error: Command failed" && exit 1; }
+	    git rm TODO || { echo "Error: Command failed" && exit 1; }
+	    git rm Makefile || { echo "Error: Command failed" && exit 1; }
+	    git rm release.sh || { echo "Error: Command failed" && exit 1; }
+	    git commit -a -m "File removal in preparation for release" || { echo "Error: Command failed" && exit 1; }
+	    git checkout master || { echo "Error: Command failed" && exit 1; }
+	    git merge --no-ff $RELEASE_BRANCH || { echo "Error: Command failed" && exit 1; }
 
 	    echo -ne "Tagging release and pushing to remote\nPress [ENTER] to continue"
 	    read -r TRASH
 
-	    git push origin
-	    git tag $RELEASE_VERSION
-	    git push origin --tags
+	    git push origin || { echo "Error: Command failed" && exit 1; }
+	    git tag $RELEASE_VERSION || { echo "Error: Command failed" && exit 1; }
+	    git push origin --tags || { echo "Error: Command failed" && exit 1; }
 	    
 	    echo ""
 	    echo "All operations complete.  You may delete the release branch if you desire"
