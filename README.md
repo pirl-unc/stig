@@ -16,7 +16,8 @@ STIG is a tool for creating artificial T-cell repertoires and producing simulate
 
 #### Reference chromosomes
 
-STIG is distributed with allele data from IMGT, as well as reference coordinates for that allele data compatible with hg38.  You will need a copy of the hg38 chromosome 7 and 14 reference files, which may be found at <http://hgdownload.cse.ucsc.edu/goldenPath/hg38/chromosomes/>  Look for `chr7.fa.gz` and `chr14.fa.gz`, and unpack these into your working directory (defaults to `data`).
+STIG is distributed with allele data from IMGT, as well as reference coordinates for that allele data compatible with hg38.  You will need a copy of the hg38 chromosome 7 and 14 reference files, which may be found at <http://hgdownload.cse.ucsc.edu/goldenPath/hg38/chromosomes/>  Look for `chr7.fa.gz` and `chr14.fa.gz`, and unpack these into your working directory (defaults to `data`).  There's also a Makefile in the working directory included with STIG, running `cd data && make fetch` will fetch and unpack hg38 chromosomes 7 and 14.
+
 
 ### Installation
 
