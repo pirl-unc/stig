@@ -156,9 +156,12 @@ class tcrConfig:
 		#
 		def readTCRConfig( self, filename ):
 				self.log.debug("Processing config file %s", filename)
-				open( filename, 'rU' )
+
+				with open( filename, 'r') as fd:
+						config_contents = fd.read().split("\n")
+
 				line_number = 0
-				for line in list(open( filename, 'rU' )):
+				for line in config_contents:
 						line_number += 1
 						new_segment = {}
 						
@@ -246,12 +249,15 @@ class tcrConfig:
 				if isinstance(filenames, str):
 						filenames = [filenames]
 
-				for file in filenames:
+				for filename in filenames:
 						line_num = 0
-						self.log.info("Processing file %s", file)
-						content = re.sub('([ctag]{1})(\r?\n)+([ctag]{1}|\Z)(\n\Z)?', r'\1\3', open(file, 'rU').read()).split("\n")
+						self.log.info("Processing file %s", filename)
+
+						with open( filename, 'r') as fd:
+								contents = re.sub('([ctag]{1})(\r?\n)+([ctag]{1}|\Z)(\n\Z)?', r'\1\3', fd.read()).split("\n")
+
 						new_allele = None
-						for line in content:
+						for line in contents:
 								line_num += 1
 								if (
 												( (line_num % 2 == 1) and re.search('^>.+$', line) ) or
@@ -417,6 +423,7 @@ class tcrConfig:
 		#
 		# Returns:
 		# A 2-tuple with an index and allele name to the requested component type
+		#
 		def chooseRandomSegment(self, receptorType, componentName, V=None, D=None, J=None):
 				self.log.debug("chooseRandomSegment() starting")
 				self.log.debug("Arguments: %s, %s, %s, %s, %s", receptorType, componentName, V, D, J)
