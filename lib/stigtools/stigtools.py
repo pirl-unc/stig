@@ -601,35 +601,39 @@ class tcrConfig:
 						chromosome = 7
 				elif re.match('^14', self.receptorSegment[jIndex]['chromosome']):
 						chromosome = 14
-						
-				self.log.debug("Calculating V segment...")
-				vSegmentDNA, vSegmentRNA = self.getSegmentSequences(V)
-				vChewback = self.roll(self.junctionProbability['Vchewback'])
-				if vChewback > 0:
-						vSegmentDNA = vSegmentDNA[0:-vChewback]
-						vSegmentRNA = vSegmentRNA[0:-vChewback]
 
+				# V segment calculations
+				vChewback = self.roll(self.junctionProbability['Vchewback'])
+				self.log.debug("Calculating V segment (chewback == %d)...", vChewback)
+				vSegmentDNA, vSegmentRNA = self.getSegmentSequences(V)
+				if vChewback > 0:
+						vSegmentDNA = vSegmentDNA[:-vChewback]
+						vSegmentRNA = vSegmentRNA[:-vChewback]
+
+				# D xor VJ segment calculations
 				if D is not None:
-						self.log.debug("Calculating D segment...")
-						dSegmentDNA, dSegmentRNA = self.getSegmentSequences(D)
 						d5Chewback = self.roll(self.junctionProbability['D5chewback'])
 						d3Chewback = self.roll(self.junctionProbability['D3chewback'])
+						self.log.debug("Calculating D segment (5' chewback == %d, 3' chewback == %d)...", d5Chewback, d3Chewback)
+						dSegmentDNA, dSegmentRNA = self.getSegmentSequences(D)
 						vdAdditions = self.getRandomNucleotides(self.roll(self.junctionProbability['VDaddition']))
 						djAdditions = self.getRandomNucleotides(self.roll(self.junctionProbability['DJaddition']))
 						if d3Chewback > 0:
 								dSegmentDNA = dSegmentDNA[d3Chewback:]
 								dSegmentRNA = dSegmentRNA[d3Chewback:]
 						if d5Chewback > 0:
-								dSegmentDNA = dSegmentDNA[0:-d5Chewback]
-								dSegmentRNA = dSegmentRNA[0:-d5Chewback]
+								dSegmentDNA = dSegmentDNA[:-d5Chewback]
+								dSegmentRNA = dSegmentRNA[:-d5Chewback]
 						dSegmentDNA = vdAdditions + dSegmentDNA + djAdditions
 						dSegmentRNA = vdAdditions + dSegmentRNA + djAdditions
 				else:
+						self.log.debug("Calculating VJ segment insertions...");
 						dSegmentDNA = self.getRandomNucleotides(self.roll(self.junctionProbability['VJaddition']))
 						dSegmentRNA = dSegmentDNA
-						
-				self.log.debug("Calculating J segment...")
+
+				# J segment calculations
 				jChewback = self.roll(self.junctionProbability['Jchewback'])
+				self.log.debug("Calculating J segment (chewback == %d)...", jChewback)
 				jSegmentDNA, jSegmentRNA = self.getSegmentSequences(J)
 				if jChewback > 0:
 						jSegmentDNA = jSegmentDNA[jChewback:]
@@ -772,7 +776,9 @@ class tcrConfig:
 		def getRandomNucleotides(self, count):
 				if count < 0:
 						raise ValueError("Count must be a non-negative integer (zero is permissible)")
-				return ''.join(random.choice('CATG') for i in range(count))
+				val = ''.join(random.choice('CATG') for i in range(count))
+				self.log.debug("getRandomNucleotides(%d): Returning %s", count, val)
+				return val
 
 
 		
@@ -839,9 +845,9 @@ class tcrConfig:
 															 geneAlleleLength,
 															 len(geneData))
 						
-								self.log.debug("Head:   %s", geneData[0:geneHeaderLength])
-								self.log.debug("Allele: %s", self.receptorSegment[segmentIndex]['allele'][segmentAllele])
-								self.log.debug("Tail:   %s", geneData[geneHeaderLength+geneAlleleLength:])
+								self.log.debug("Head (L-PART1 + INTRON + LPART2):   %s", geneData[0:geneHeaderLength])
+								self.log.debug("Allele (V-REGION): %s", self.receptorSegment[segmentIndex]['allele'][segmentAllele])
+								self.log.debug("Tail (V-RS):   %s", geneData[geneHeaderLength+geneAlleleLength:])
 								dnaData = geneData[0:geneHeaderLength] + self.receptorSegment[segmentIndex]['allele'][segmentAllele]
 								# Now substitute the L-PART allele in RNA (as the geneHeader portion has an intron in it)
 								lPartSegments = list(filter(lambda x:x['gene'] == self.receptorSegment[segmentIndex]['gene'] and
@@ -884,13 +890,16 @@ class tcrConfig:
 								if cEndPosition is None or i['end_position'] > cEndPosition:
 										cEndPosition = i['end_position']
 								if i['region'] == 'EX1':
-										rnaData[0] = i['allele'][random.choice(list(i['allele'].keys()))]
+										rnaData[0] = i['allele'][segmentAllele]
 								if i['region'] == 'EX2':
-										rnaData[1] = i['allele'][random.choice(list(i['allele'].keys()))]
+										rnaData[1] = i['allele'][random.choice(list(i['allele'].keys()))] #NOCOMMIT
+										rnaData[1] = i['allele'][segmentAllele]
 								if i['region'] == 'EX3':
-										rnaData[2] = i['allele'][random.choice(list(i['allele'].keys()))]
+										rnaData[2] = i['allele'][random.choice(list(i['allele'].keys()))] #NOCOMMIT
+										rnaData[2] = i['allele'][segmentAllele]
 								if i['region'] == 'EX4' and 'allele' in i:
-										rnaData[3] = i['allele'][random.choice(list(i['allele'].keys()))]
+										rnaData[3] = i['allele'][random.choice(list(i['allele'].keys()))] #NOCOMMIT
+										rnaData[3] = i['allele'][segmentAllele]
 						rnaData = ''.join(rnaData)
 						#self.log.debug("Returning RNA: %s", rnaData)
 						dnaData = self.readChromosome(chromosome, cStartPosition, cEndPosition, self.receptorSegment[segmentIndex]['strand'])
