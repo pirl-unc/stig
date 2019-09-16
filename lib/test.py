@@ -7,17 +7,12 @@ import os
 import re
 import pprint
 import logging
-import difflib # NOCOMMIT
 
 config_iterations = 100
-config_iterations = 1 # NOCOMMIT
 
 myLog = logging.getLogger('main')
 sh = logging.StreamHandler()
-#myLog.setLevel(logging.DEBUG) # NOCOMMIT
 myLog.setLevel(logging.WARNING)
-#sh.setFormatter(logging.Formatter(fmt='%(asctime)s.%(msecs)03d [%(levelname)s] %(name)s %(message)s',
-#																	datefmt='%Y%m%d%H%M%S'))
 myLog.addHandler(sh)
 
 class TestTcrConfig(unittest.TestCase):
@@ -163,12 +158,14 @@ class TestTcrConfig_recombinate(unittest.TestCase):
 						}
 				
 				# TRBV20-1 L-V-GENE-UNIT is contained in HG38 at NC_000007.14:142626727-142627438
-				# The *01 allele differs at the lowercase positions here
+				# The *01 allele differs from Hg38 at the lowercase positions here
 				# This segment has been edited to remove the V-RS (heptamer, V-spacer and nonamer) tail, as would be done in preparation for inclusion into a functional TCR
 				vSegDNA = "ATGCTGCTGCTTCTGCTGCTTCTGGGGCCAGGTATAAGCCTCCTTCTACCTGGGAGCTTGGGTGGGCATGTGCGTGTGTTGGCATGGTCAAGTGGTGGCCAGCAGGGTTGCAATGTGGATTGTTTATGCTCATCGAAGGGAGAGGGAGAGGCCCTGCTCTCTAGAGGTGTAAATGGTAAGGTGAAAGCCGCCGGTCAGAGGAGATGGGGGATTATGGCCCTAGGGAGATGACGGGAAGATTGCACAAAACAAACAGGACTCTCCAGGAGCTGGGAGCACAGGGAGGGAGTGAGGCTCAGCTCTGCCTGGCGTCCTGTCTGACTCGGCTCCCACTGGGCTCTCCTCTCTCTCTGGCTTCTGTCTCAGCAGGCTCCGGGCTTGGTGCTGTCGTCTCTCAACATCCGAGCtGGGTTATCTGTAAGAGTGGAACCTCTGTGAAGATCGAGTGCCGTTCCCTGGACTTTCAGGCCACAACTATGTTTTGGTATCGTCAGTTCCCGAAACAGAGTCTCATGCTGATGGCAACTTCCAATGAGGGCTCCAAGGCCACATACGAGCAAGGCGTCGAGAAGGACAAGTTTCTCATCAACCATGCAAGCCTGACCTTGTCCACTCTGACAGTGACCAGTGCCCATCCTGAAGACAGCAGCTTCTACATCTGCAGTGCTAGAGA"# V-RS: CACAGCGCCAGGAGGGGATCAGACACCGCGGCAAGAACC
 				# TRBV20-1 L-PART1+V-EXON from IMGT
 				vSegRNA = "atgctgctgcttctgctgcttctggggccaggtataagcctccttctacctgggagcttggcaggctccgggcttggtgctgtcgtctctcaacatccgagctgggttatctgtaagagtggaacctctgtgaagatcgagtgccgttccctggactttcaggccacaactatgttttggtatcgtcagttcccgaaacagagtctcatgctgatggcaacttccaatgagggctccaaggccacatacgagcaaggcgtcgagaaggacaagtttctcatcaaccatgcaagcctgaccttgtccactctgacagtgaccagtgcccatcctgaagacagcagcttctacatctgcagtgctagaga"
+				# TRBD2*01, Source: IMGT
 				dSeg = "gggactagcggggggg"
+				# TRBJ2-1*01, Source: IMGT
 				jSeg = "ctcctacaatgagcagttcttcgggccagggacacggctcaccgtgctag"
 
 				# TRBC2 EX1-4 from NCBI NC_000007.14:142801040-142802526
@@ -200,8 +197,8 @@ class TestTcrConfig_recombinate(unittest.TestCase):
 				self.assertTrue(cSegNum is not None)
 
 				# Recombinate may return None if our recombination fails (early stops, frameshift, etc), so we loop here:
-				for i in range(0, 500):
-						myLog.setLevel(logging.DEBUG) # NOCOMMIT
+				successfulIterations = 0
+				for i in range(0, config_iterations * 6):
 						x = self.config.recombinate((vSegNum, '01'), (dSegNum, '01'), (jSegNum, '01'), (cSegNum, '01'))
 						if x is not None:
 								DNA = x[0][3]
@@ -219,27 +216,6 @@ class TestTcrConfig_recombinate(unittest.TestCase):
 														jcSegDNA +
 														cSegDNA +
 														"$" ).upper()
-								dnaRegex2 = ("^ATG" +
-#														 vSegDNA[:-4] +
-														 
-														 ".*$").upper()
-
-								dnaRegex3 = (vSegDNA[:-4] + # Segment
-														"((" + ")|(".join([vSegDNA[-4:], vSegDNA[-4:-1], vSegDNA[-4:-2], vSegDNA[-4:-3]]) + "))?" + # Chewback
-														"[CTAG]{,4}" + # insertions
-														"((" + ")|(".join([dSeg[:4], dSeg[1:4], dSeg[2:4], dSeg[3:4]]) + "))?" +
-														dSeg[4:-4] + 
-														"((" + ")|(".join([dSeg[-4:], dSeg[-4:-1], dSeg[-4:-2], dSeg[-4:-3]]) + "))?" ).upper()
-
-								dnaRegex4 = (vSegDNA[:-4] + # Segment
-														"((" + ")|(".join([vSegDNA[-4:], vSegDNA[-4:-1], vSegDNA[-4:-2], vSegDNA[-4:-3]]) + "))?" + # Chewback
-														"[CTAG]{,4}" + # insertions
-														"((" + ")|(".join([dSeg[:4], dSeg[1:4], dSeg[2:4], dSeg[3:4]]) + "))?" +
-														dSeg[4:-4] + 
-														"((" + ")|(".join([dSeg[-4:], dSeg[-4:-1], dSeg[-4:-2], dSeg[-4:-3]]) + "))?" +
-														"[CTAG]{,4}" +
-														"((" + ")|(".join([jSeg[:4], jSeg[1:4], jSeg[2:4], jSeg[3:4]]) + "))?" +
-														jSeg[4:]).upper()
 
 								rnaRegex = ("^" +
 														vSegRNA[:-4] + # Segment
@@ -253,38 +229,14 @@ class TestTcrConfig_recombinate(unittest.TestCase):
 														jSeg[4:] +
 														cSegRNA +
 														"$").upper()
-								rnaRegex2 = ("^" +
-														vSegRNA[:-4] + # Segment
-														"((" + ")|(".join([vSegRNA[-4:], vSegRNA[-4:-1], vSegRNA[-4:-2], vSegRNA[-4:-3]]) + "))?" + # Chewback
-														".*").upper()
-								rnaRegex3 = ("^" +
-														vSegRNA[:-4] + # Segment
-														"((" + ")|(".join([vSegRNA[-4:], vSegRNA[-4:-1], vSegRNA[-4:-2], vSegRNA[-4:-3]]) + "))?" + # Chewback
-														"[CTAG]{,4}" + # insertions
-														"((" + ")|(".join([dSeg[:4], dSeg[1:4], dSeg[2:4], dSeg[3:4]]) + "))?" +
-														dSeg[4:-4] + 
-														".*$").upper()
-								rnaRegex4 = ("^" +
-														vSegRNA[:-4] + # Segment
-														"((" + ")|(".join([vSegRNA[-4:], vSegRNA[-4:-1], vSegRNA[-4:-2], vSegRNA[-4:-3]]) + "))?" + # Chewback
-														"[CTAG]{,4}" + # insertions
-														"((" + ")|(".join([dSeg[:4], dSeg[1:4], dSeg[2:4], dSeg[3:4]]) + "))?" +
-														dSeg[4:-4] + 
-														"((" + ")|(".join([dSeg[-4:], dSeg[-4:-1], dSeg[-4:-2], dSeg[-4:-3]]) + "))?" +
-														"[CTAG]{,4}" +
-														"((" + ")|(".join([jSeg[:4], jSeg[1:4], jSeg[2:4], jSeg[3:4]]) + "))?" +
-														jSeg[4:] +
-														".*$").upper()
 
-
-								self.assertTrue(re.match(dnaRegex2, DNA))
-								self.assertTrue(re.match(dnaRegex3, DNA))
-								self.assertTrue(re.match(dnaRegex4, DNA))
 								self.assertTrue(re.match(dnaRegex, DNA))
 								self.assertTrue(re.match(rnaRegex, RNA))
 
-								self.config.junctionProbability = junctionProbability_orig
-
+								successfulIterations += 1
+								if successfulIterations > config_iterations:
+										self.config.junctionProbability = junctionProbability_orig
+										return
 
 				# If our loop runs out, fail the test with a message for user/developer
 				self.assertTrue("Recombinate failed too many times, perhaps retry unit tests?" == '')

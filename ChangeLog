@@ -78,7 +78,9 @@
 * Moved the warning message ("... ignoring any --population and --repertoire...") that appears when loading populations (--load-population) from stderr to STIG's log facility at 'warning' level
 * Removed the default value for WORKING_DIR in the command line options.  As all options have defaults, invoking STIG successfully without any command line options seemed strange.
 * Updated manual to clarify language around V-region intron handling
-* Changed license to GPL version 3 
+* Changed license to GPL version 3
 
 ## STIG [*.*.*]: 2019-09-9
 * Code ported to python 3
+* Unit tests integrated into main branch
+* Fixed issue with using chromosome files other than 7 or 14

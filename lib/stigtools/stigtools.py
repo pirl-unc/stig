@@ -595,12 +595,15 @@ class tcrConfig:
 				vIndex, vAllele = V
 				jIndex, jAllele = J
 				cIndex, cAllele = C
-				
+
+				# Determine our chromosome number from the J segment index
 				chromosome = None
-				if re.match('^7', self.receptorSegment[jIndex]['chromosome']):
-						chromosome = 7
-				elif re.match('^14', self.receptorSegment[jIndex]['chromosome']):
-						chromosome = 14
+				chromosome = re.findall('^\d+', self.receptorSegment[jIndex]['chromosome'])
+				if chromosome is None or not isinstance(chromosome, list) or (isinstance(chromosome, list) and len(chromosome) > 1):
+						self.log.critical("Receptor segment %s chromosome (value: %s) is invalid", self.receptorSegment[jIndex]['gene'], self.receptorSegment[jIndex]['chromosome'])
+						exit(-10)
+				else:
+						chromosome = int(chromosome[0])
 
 				# V segment calculations
 				vChewback = self.roll(self.junctionProbability['Vchewback'])
