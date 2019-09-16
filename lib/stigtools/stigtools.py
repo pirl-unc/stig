@@ -895,13 +895,10 @@ class tcrConfig:
 								if i['region'] == 'EX1':
 										rnaData[0] = i['allele'][segmentAllele]
 								if i['region'] == 'EX2':
-										rnaData[1] = i['allele'][random.choice(list(i['allele'].keys()))] #NOCOMMIT
 										rnaData[1] = i['allele'][segmentAllele]
 								if i['region'] == 'EX3':
-										rnaData[2] = i['allele'][random.choice(list(i['allele'].keys()))] #NOCOMMIT
 										rnaData[2] = i['allele'][segmentAllele]
 								if i['region'] == 'EX4' and 'allele' in i:
-										rnaData[3] = i['allele'][random.choice(list(i['allele'].keys()))] #NOCOMMIT
 										rnaData[3] = i['allele'][segmentAllele]
 						rnaData = ''.join(rnaData)
 						#self.log.debug("Returning RNA: %s", rnaData)

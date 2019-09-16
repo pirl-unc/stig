@@ -448,12 +448,13 @@ The D and J regions don't have intronic data, and thus only a D-REGION and J-REG
 
 N.b. that the versions of these files were hand-curated to exclude various logical inconsistencies that would interfere with the operation of this software.  These exclusions and edits fall into several broad categories:
 
-1. V-REGIONs without L-V-GENE-UNIT regions
+1. V-REGIONs without defined L-V-GENE-UNIT regions
 2. Orphons and pseudogenes
 3. V-REGIONs without L-PART1+L-PART2 data (which is needed to generate RNA)
 4. Addition of explicit L-PART1-L-PART2 reference coordinates
 5. Addition of D-REGION reference coordinates
 6. Correction of NCBI-format reference coordinates
+7. Incomplete allele data (e.g. TRGC1*02 is lacking data for EX2 and EX3)
 
 
 ## 8. AUTHORS
@@ -477,7 +478,7 @@ Bug report can be filed under the project page on GitHub.
 
 2. Loading a repertoire/population will contain the allele data from when the repertoire was generated (i.e. it will not attempt to re-load allele data from the working directory).  As the initial alleles are used to generate the TCR repertoires, this is intended behavior.
 
-3. The handling of C-region alleles is semi-functional.  In RNA, an allele for each exon are randomly pulled when requested (e.g. Requesting EX1 of TRBC1*01 will return either EX1 of TRBC1*01 or EX1 of TRBC1*02).  In DNA, the alleles are not used at all (data is instead pulled from the chromosome file).  The complexity of code needed to splice in multiple exon alleles is nontrivial, and the C-regions aren't highly utilized in TCR reconstruction and analysis, in any event.  A fix can be implemented if there is sufficient demand.  A workaround for this is to only have a single allele for each C region, and ensure this allele matches the reference chromosomes: this ensures that all C-regions will have the same exonic sequences in DNA and RNA.
+3. The handling of C-region alleles is semi-functional.  In RNA, alleles work as expected provided that each allele is defined for each exon (e.g. one cannot define TRBC\*08 for EX1, but not EX2).  In DNA, the alleles are not used at all (data is instead pulled from the chromosome file).  The complexity of code needed to splice in multiple exon alleles is nontrivial, and the C-regions aren't highly utilized in TCR reconstruction and analysis, in any event.  A fix can be implemented if there is sufficient demand.  A workaround for this is to only have a single allele for each C region, and ensure this allele matches the reference chromosomes: this ensures that all C-regions will have the same exonic sequences in DNA and RNA.
 
 4. Similar to the above C-region alleles, there are no alleles for L-PART1, L-PART2, or the DNA-space of the V-region intron.  Thus, these nucleotides are pulled directly from the reference chromosome when simulating DNA sequencing data.  There's a fair bit of complexity in providing this functionality, and this region likely does not contribute much to TCR diversity or functionality.  A fix can be implemented if there is sufficient demand.
 

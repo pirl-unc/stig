@@ -84,3 +84,4 @@
 * Code ported to python 3
 * Unit tests integrated into main branch
 * Fixed issue with using chromosome files other than 7 or 14
+* Removed TRGC*02 for incomplete allele information (only EX1 was defined)
