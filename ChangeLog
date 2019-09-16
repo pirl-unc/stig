@@ -80,7 +80,7 @@
 * Updated manual to clarify language around V-region intron handling
 * Changed license to GPL version 3
 
-## STIG [*.*.*]: 2019-09-9
+## STIG [0.6.0]: 2019-09-9
 * Code ported to python 3
 * Unit tests integrated into main branch
 * Fixed issue with using chromosome files other than 7 or 14
