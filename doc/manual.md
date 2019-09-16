@@ -1,7 +1,7 @@
 STIG: Synthetic TCR Informatics Generator
 =========================================
 
-Current for v0.5.4
+Current for v0.6.0
 
 Table of contents
 -----------------
@@ -437,7 +437,7 @@ Each V-region consists of three major components, defined by coordinates in the 
 
 ##### C-Region Definition
 
-The C-region is composed of a large segment with multiple (3 or 4, in humans) exons.  Because the C-region spans multiple exons, STIG requires the start and end coordinates of each exon, defined as segments EX1, EX2, EX3, and (sometimes) EX4.  These coordinates are used to splice in exon allele data.
+The C-region is composed of a large segment with multiple (3 or 4, in humans) exons.  Because the C-region spans multiple exons, STIG requires the start and end coordinates of each exon, defined as segments EX1, EX2, EX3, and (sometimes) EX4.  These coordinates are used to splice in exon allele data and locate the start of the 3' UTR.
 
 ###### D and J-Region Definition
 
@@ -448,12 +448,13 @@ The D and J regions don't have intronic data, and thus only a D-REGION and J-REG
 
 N.b. that the versions of these files were hand-curated to exclude various logical inconsistencies that would interfere with the operation of this software.  These exclusions and edits fall into several broad categories:
 
-1. V-REGIONs without L-V-GENE-UNIT regions
+1. V-REGIONs without defined L-V-GENE-UNIT regions
 2. Orphons and pseudogenes
 3. V-REGIONs without L-PART1+L-PART2 data (which is needed to generate RNA)
 4. Addition of explicit L-PART1-L-PART2 reference coordinates
 5. Addition of D-REGION reference coordinates
 6. Correction of NCBI-format reference coordinates
+7. Incomplete allele data (e.g. TRGC1*02 is lacking data for EX2 and EX3)
 
 
 ## 8. AUTHORS
@@ -468,7 +469,7 @@ Initial code: Mark Woodcock, University of North Carolina at Chapel Hill
 
 If you find a bug in STIG, please report it.  To ensure the problem exists in the most current version of STIG, you may download the latest version at https://github.com/vincentlaboratories/stig
 
-Bug report can be filed under the project page on GitHub.
+Bug reports are welcome and can be filed under the project page on GitHub.
 
 
 ### 9.2 Known issues/limitations
@@ -477,10 +478,12 @@ Bug report can be filed under the project page on GitHub.
 
 2. Loading a repertoire/population will contain the allele data from when the repertoire was generated (i.e. it will not attempt to re-load allele data from the working directory).  As the initial alleles are used to generate the TCR repertoires, this is intended behavior.
 
-3. The handling of C-region alleles is semi-functional.  In RNA, an allele for each exon are randomly pulled when requested (e.g. Requesting EX1 of TRBC1*01 will return either EX1 of TRBC1*01 or EX1 of TRBC1*02).  In DNA, the alleles are not used at all (data is instead pulled from the chromosome file).  The complexity of code needed to splice in multiple exon alleles is nontrivial, and the C-regions aren't highly utilized in TCR reconstruction and analysis, in any event.  A fix can be implemented if there is sufficient demand.  A workaround for this is to only have a single allele for each C region, and ensure this allele matches the reference chromosomes: this ensures that all C-regions will have the same exonic sequences in DNA and RNA.
+3. The handling of C-region alleles is semi-functional.  In RNA, alleles work as expected provided that each allele is defined for each exon (e.g. one cannot define TRBC\*08 for EX1, but not EX2).  In DNA, the alleles are not used at all (data is instead pulled from the chromosome file).  The complexity of code needed to splice in multiple exon alleles is nontrivial, and the C-regions aren't highly utilized in TCR reconstruction and analysis, in any event.  A fix can be implemented if there is sufficient demand.  A workaround for this is to only have a single allele for each C region, and ensure this allele matches the reference chromosomes: this ensures that all C-regions will have the same exonic sequences in DNA and RNA.
 
 4. Similar to the above C-region alleles, there are no alleles for L-PART1, L-PART2, or the DNA-space of the V-region intron.  Thus, these nucleotides are pulled directly from the reference chromosome when simulating DNA sequencing data.  There's a fair bit of complexity in providing this functionality, and this region likely does not contribute much to TCR diversity or functionality.  A fix can be implemented if there is sufficient demand.
 
 ## 10. COPYRIGHT
 
-Copyright (C) 2019 The University of North Carolina at Chapel Hill.  License: GPLv3+: GNU  GPL  version  3  or  later http://gnu.org/licenses/gpl.html  This is free software: you are free to change and redistribute it.  There is NO WARRANTY, to the extent permitted by law.
+Copyright (C) 2019 The University of North Carolina at Chapel Hill.  
+
+License: GPLv3+: GNU  GPL  version  3  or  later http://gnu.org/licenses/gpl.html  This is free software: you are free to change and redistribute it.  There is NO WARRANTY, to the extent permitted by law.
