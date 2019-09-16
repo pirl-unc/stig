@@ -469,7 +469,7 @@ Initial code: Mark Woodcock, University of North Carolina at Chapel Hill
 
 If you find a bug in STIG, please report it.  To ensure the problem exists in the most current version of STIG, you may download the latest version at https://github.com/vincentlaboratories/stig
 
-Bug report can be filed under the project page on GitHub.
+Bug reports are welcome and can be filed under the project page on GitHub.
 
 
 ### 9.2 Known issues/limitations
