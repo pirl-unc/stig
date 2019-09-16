@@ -10,7 +10,7 @@ while true; do
     case "$state" in
 	initial)
 	    if [ "$CURR_GIT_BRANCH" == "" ]; then		
-		echo "Error: You are not on a release branch.  Create and FINALIZE the release branch before running this script."
+		echo "Error: You are not on a release branch (e.g. release-x.y.z).  Create and FINALIZE the release branch before running this script."
 		exit
 	    elif [ "$GIT_DIRTY" != "" ]; then
 		echo "Error: Your current branch is dirty.  Commit your changes before running this script";

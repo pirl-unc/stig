@@ -1,7 +1,7 @@
 STIG: Synthetic TCR Informatics Generator
 =========================================
 
-Current for v0.5.4
+Current for v0.6.0
 
 Table of contents
 -----------------
@@ -437,7 +437,7 @@ Each V-region consists of three major components, defined by coordinates in the 
 
 ##### C-Region Definition
 
-The C-region is composed of a large segment with multiple (3 or 4, in humans) exons.  Because the C-region spans multiple exons, STIG requires the start and end coordinates of each exon, defined as segments EX1, EX2, EX3, and (sometimes) EX4.  These coordinates are used to splice in exon allele data.
+The C-region is composed of a large segment with multiple (3 or 4, in humans) exons.  Because the C-region spans multiple exons, STIG requires the start and end coordinates of each exon, defined as segments EX1, EX2, EX3, and (sometimes) EX4.  These coordinates are used to splice in exon allele data and locate the start of the 3' UTR.
 
 ###### D and J-Region Definition
 
@@ -469,7 +469,7 @@ Initial code: Mark Woodcock, University of North Carolina at Chapel Hill
 
 If you find a bug in STIG, please report it.  To ensure the problem exists in the most current version of STIG, you may download the latest version at https://github.com/vincentlaboratories/stig
 
-Bug report can be filed under the project page on GitHub.
+Bug reports are welcome and can be filed under the project page on GitHub.
 
 
 ### 9.2 Known issues/limitations
