@@ -85,3 +85,6 @@
 * Unit tests integrated into main branch
 * Fixed issue with using chromosome files other than 7 or 14
 * Removed TRGC*02 for incomplete allele information (only EX1 was defined)
+
+## STIG [x.x.x]: 2019-09-17
+* Fixed issue where trying to degrade output with the FASTQ method and a nonexistent FASTQ file would not throw an exception

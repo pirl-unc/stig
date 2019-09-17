@@ -114,8 +114,8 @@ class tcrConfig:
 				#
 				tcrconfigFile = "%s/tcell_receptor.tsv" % (dirname)
 				if not os.path.isfile( tcrconfigFile ):
-						self.log.critical("Could not locate T-cell receptor component file (%s), ensure working directory contains necessary files" % tcrconfigFile)
-						exit(-10)						
+						self.log.critical("Could not locate T-cell receptor component file (%s), ensure working directory contains necessary files" , tcrconfigFile)
+						raise ValueError("Could not locate T-cell receptor component file 'tcell_receptor.tsv, ensure working directory contains necessary files.  Dir:", tcrconfigFile)
 				else:
 						self.readTCRConfig( tcrconfigFile )
 
@@ -285,7 +285,7 @@ class tcrConfig:
 														elif( len(segments) is 0 ):
 																self.log.warning("No corresponding receptor localization data for %s of %s*%s", region, gene, allele_name)
 														else:
-																self.log.critical("Multiple receptor localization data for %s of %s*%s", region, gene, allele_name)
+																self.log.error("Multiple receptor localization data for %s of %s*%s", region, gene, allele_name)
 												else:
 														self.log.warning("Skipping unsupported gene region \"%s\" in allele %s", region, allele)
 														continue
@@ -297,17 +297,17 @@ class tcrConfig:
 												continue
 										elif( line_num %2 == 0 ):
 												# Add any found new allele to our struct
+
 												if( new_allele is not None):
 														if( new_allele.get('index', None) is not None and
 																new_allele.get('name', None) is not None ):
-																
+
 																if( self.receptorSegment[new_allele['index']].get('allele', None) is None ):
 																		self.receptorSegment[new_allele['index']]['allele'] = {}
-																#self.log.debug("Assigning %s sequence: %s", new_allele['name'], line)
+																self.log.debug("Assigning %s sequence: %s", new_allele['name'], line)
 																self.receptorSegment[new_allele['index']]['allele'][new_allele['name']] = line
 																new_allele = None
-																exit
-										
+
 								else:
 										self.log.critical("In file %s, line %d does not appear to be FASTA formatted: \"%s\"",
 																			file, line_num, line)
@@ -315,7 +315,6 @@ class tcrConfig:
 																			file, line_num, line)
 								
 				self.log.info("readAlleles(): Processing complete")
-
 
 		# setChromosomeFile - Identify the location of a necessary chromosome
 		#                     reference files and initialize some internal
@@ -1056,8 +1055,8 @@ class tcrConfig:
 				qualities = []
 
 				if not os.path.isfile( filename ):
-						self.log.critical("Could not locate FASTQ file for loading quality data: %s" % tcrconfigFile)
-						exit(-10)
+						self.log.critical("Could not locate FASTQ file for loading quality data: %s", filename)
+						raise ValueError("Could not locate FASTQ file for loading quality data: ", filename)
 						
 				with open(filename, 'r') as input1:
 						lineNum = 0
