@@ -35,6 +35,10 @@ class TestTcrConfig(unittest.TestCase):
 				with self.assertRaises(ValueError):
 						self.config.readTCRConfig(self.tempfilename)
 
+		def test_fastq_file_not_exist(self):
+				with self.assertRaises(ValueError):
+						self.config.getFastqQualities('/STIG_invalid_filename_does_not_exist')
+						
 class TestTcrConfig_chooseRandomSegment(unittest.TestCase):
 
 		def setUp(self):
