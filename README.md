@@ -10,7 +10,7 @@ STIG is a tool for creating artificial T-cell repertoires and producing simulate
 ## Getting started
 ### Prerequisites
 
-1. A working Python 2 installation.  This has been been tested with 2.7.12 and 2.7.5.
+1. A working Python 3 installation.  This has been been tested with 3.5.2.
 2. Two python package requirements: 'numpy' for numeric distributions required for making repertoires, and 'pyyaml' for unpacking the YAML-formatted TCR recombination data
 3. Reference chromosomes placed in the working directory (`data`, by default).  See "Reference chromosomes" below.
 
