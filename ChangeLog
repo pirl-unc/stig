@@ -90,3 +90,6 @@
 * Fixed issue where trying to degrade output with the FASTQ method and a nonexistent FASTQ file would not throw an exception
 * Fixed setWorkingDir() function to throw exception with invalid arguments
 * Fixed erroneous python version in README
+
+## STIG [0.6.2]: 2019-12-13
+* Documentation updates to rehome git repository to Benjamin-Vincent-Lab

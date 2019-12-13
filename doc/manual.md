@@ -1,7 +1,7 @@
 STIG: Synthetic TCR Informatics Generator
 =========================================
 
-Current for v0.6.1
+Current for v0.6.2
 
 Table of contents
 -----------------
@@ -459,15 +459,15 @@ N.b. that the versions of these files were hand-curated to exclude various logic
 
 ## 8. AUTHORS
 
-Initial code: Mark Woodcock, University of North Carolina at Chapel Hill
-	mark.woodcock@unchealth.unc.edu
+Initial code & maintainer: Mark Woodcock, University of North Carolina at Chapel Hill
+	                   mark.woodcock@unchealth.unc.edu
 	
 
 
 ## 9. BUGS
 ### 9.1 Reporting Bugs
 
-If you find a bug in STIG, please report it.  To ensure the problem exists in the most current version of STIG, you may download the latest version at https://github.com/vincentlaboratories/stig
+If you find a bug in STIG, please report it.  To ensure the problem exists in the most current version of STIG, you may download the latest version at https://github.com/Benjamin-Vincent-Lab/stig
 
 Bug reports are welcome and can be filed under the project page on GitHub.
 
