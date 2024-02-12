@@ -1,7 +1,7 @@
 STIG: Synthetic TCR Informatics Generator
 =========================================
 
-## Note original repository was at: https://github.com/Benjamin-Vincent-Lab/stig . Moved on 2/12/2024
+* Note original repository was at: https://github.com/Benjamin-Vincent-Lab/stig . Moved on 2/12/2024
 
 INTRODUCTION
 ------------
